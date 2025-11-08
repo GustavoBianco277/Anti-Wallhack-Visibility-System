@@ -8,30 +8,30 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  background-color: #0a0a0f;
-  color: #e8e8e8;
-  line-height: 1.6;
+  background: linear-gradient(180deg, #0f1620, #121a25);
+  color: #ddd;
+  line-height: 1.7;
 }
 
 header {
   text-align: center;
   padding: 4rem 1rem 2rem;
-  background: linear-gradient(180deg, #0b0b12, #0a0a0f);
+  background: linear-gradient(180deg, #131c28, #10161f);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
 }
 
-header .logo img {
-  width: 120px;
+header .logo svg {
   margin-bottom: 1rem;
 }
 
 header h1 {
   font-size: 2.2rem;
   font-weight: 800;
-  color: #00aaff;
+  color: #1da1f2;
 }
 
 .subtitle {
-  color: #bbb;
+  color: #b5c1cc;
   font-size: 1.1rem;
   margin-top: 0.3rem;
 }
@@ -43,10 +43,10 @@ section {
 }
 
 h2 {
-  color: #00aaff;
+  color: #1da1f2;
   font-size: 1.6rem;
   margin-bottom: 1rem;
-  border-left: 4px solid #00aaff;
+  border-left: 4px solid #1da1f2;
   padding-left: 0.5rem;
 }
 
@@ -56,11 +56,11 @@ ul {
 }
 
 ul li {
-  margin: 0.5rem 0;
+  margin: 0.6rem 0;
 }
 
 .gizmo-list p {
-  color: #aaa;
+  color: #aab8c2;
   font-size: 0.95rem;
 }
 
@@ -74,13 +74,14 @@ ul li {
 .image-grid img {
   width: 100%;
   border-radius: 10px;
-  border: 1px solid #111;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #1e2b38;
+  background-color: #18222e;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .image-grid img:hover {
   transform: scale(1.02);
-  box-shadow: 0 0 15px rgba(0, 170, 255, 0.4);
+  box-shadow: 0 0 20px rgba(29,161,242,0.35);
 }
 
 .download {
@@ -91,7 +92,7 @@ ul li {
   display: inline-block;
   margin-top: 1rem;
   padding: 0.8rem 1.6rem;
-  background-color: #00aaff;
+  background-color: #1da1f2;
   color: #fff;
   border-radius: 8px;
   text-decoration: none;
@@ -100,13 +101,14 @@ ul li {
 }
 
 .button:hover {
-  background-color: #0088cc;
+  background-color: #178dd8;
 }
 
 footer {
   text-align: center;
   padding: 2rem;
-  border-top: 1px solid #111;
-  color: #888;
+  border-top: 1px solid #1b2532;
+  color: #8f9aa5;
   font-size: 0.9rem;
+  background-color: #0f1620;
 }
