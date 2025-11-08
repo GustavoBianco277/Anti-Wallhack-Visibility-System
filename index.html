@@ -1,58 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Anti-Wallhack Visibility System | Extreme World Studio</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Anti-Wallhack Visibility System — Server-side visibility detection for Unity multiplayer games.">
+  <title>Anti-Wallhack Visibility System</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="hero">
-    <div class="overlay"></div>
-    <div class="hero-content">
-      <img src="icon.png" alt="Anti-Wallhack Logo" class="logo" />
+
+  <header>
+    <div class="logo">
+      <img src="icon.png" alt="Anti-Wallhack Logo">
       <h1>Anti-Wallhack Visibility System</h1>
-      <p>Advanced security and visibility management for multiplayer games.</p>
-      <a href="https://assetstore.unity.com" class="btn">Get it on Unity Asset Store</a>
+      <p class="subtitle">Server-Side Visibility Detection for Unity Multiplayer Games</p>
     </div>
   </header>
 
   <section class="about">
-    <h2>About the Asset</h2>
+    <h2>🧠 About</h2>
     <p>
-      The <strong>Anti-Wallhack Visibility System</strong> is a robust solution designed
-      to prevent wallhack and line-of-sight cheats in Unity multiplayer environments.
-      It provides automatic visibility control, optimizing rendering and ensuring
-      fair gameplay across all clients.
+      The <strong>Anti-Wallhack Visibility System</strong> provides a robust, server-side solution to detect player visibility 
+      and prevent wallhacks in competitive Unity multiplayer environments. It ensures each player only sees what they should — nothing more.
     </p>
   </section>
 
   <section class="features">
-    <h2>Key Features</h2>
+    <h2>⚙️ Features</h2>
     <ul>
-      <li>✅ Real-time visibility checks for multiplayer games</li>
-      <li>✅ Lightweight and optimized for performance</li>
-      <li>✅ Compatible with all major networking frameworks</li>
-      <li>✅ Simple integration — ready to use in minutes</li>
+      <li><strong>🎯 Observer-based Field of View (FOV):</strong> Calculates visibility using directional cones and raycasting logic.</li>
+      <li><strong>🧠 Optimized Detection:</strong> Once a valid line reaches the target, only that path is calculated until visibility is lost.</li>
+      <li><strong>🛠️ Customizable Parameters:</strong> Configure ray counts, spacing, alignment thresholds, and detection speed.</li>
+      <li><strong>🎨 Editor Gizmos:</strong> Visualize detection logic in real time with color-coded gizmos.</li>
     </ul>
+
+    <div class="gizmo-list">
+      <p>🔵 Vertical lines (Cyan)</p>
+      <p>🟣 Horizontal lines (Magenta)</p>
+      <p>🟢 Detected lines (Green)</p>
+      <p>🟡 Face lines (Yellow)</p>
+      <p>⚪ Box collider (White)</p>
+    </div>
   </section>
 
   <section class="gallery">
-    <h2>Showcase</h2>
-    <div class="images">
-      <img src="cover.png" alt="Cover image" />
-      <img src="card.png" alt="Card image" />
-      <img src="vertical.png" alt="Vertical image" />
+    <h2>📸 Screenshots</h2>
+    <div class="image-grid">
+      <img src="screenshots/fov-demo.png" alt="FOV Demo">
+      <img src="screenshots/inspector-settings.png" alt="Inspector Settings">
+      <img src="screenshots/gizmos.png" alt="Gizmos">
+      <img src="screenshots/efficient-system.png" alt="Efficient System">
+      <img src="screenshots/detection-logic.png" alt="Detection Logic">
     </div>
+  </section>
+
+  <section class="download">
+    <h2>📦 Asset Store</h2>
+    <p>Coming soon to the Unity Asset Store.</p>
+    <a class="button" href="#" target="_blank">View on Unity Asset Store</a>
   </section>
 
   <footer>
     <p>© 2025 Extreme World Studio. All rights reserved.</p>
-    <p>
-      Developed with Unity • AI-assisted content disclosed per Asset Store policy.
-    </p>
-    <a href="https://github.com/GustavoBianco277" target="_blank">GitHub</a> |
-    <a href="mailto:extremeworldstudio@gmail.com">Contact</a>
+    <p>Made with 💙 for Unity developers.</p>
   </footer>
+
 </body>
 </html>
