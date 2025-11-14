@@ -88,23 +88,6 @@ ul li {
   text-align: center;
 }
 
-.button {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.8rem 1.6rem;
-  background-color: #1da1f2;
-  color: #fff;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: background 0.2s;
-}
-
-.button:hover {
-  background-color: #1f6fe5;
-  box-shadow: 0 0 12px #1f6fe5;
-}
-
 .logo img {
   width: 96px;    
   height: auto;    
@@ -112,8 +95,42 @@ ul li {
   vertical-align: middle;
 }
 
+.button {
+  display: inline-block;
+  padding: 10px 18px;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #0078ff, #005fcc);
+  transition: transform 0.15s ease, background 0.3s ease;
+}
+
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
 .button:hover {
   background-color: #178dd8;
+  transform: translateY(-2px);
+  background: linear-gradient(145deg, #0090ff, #006ad8);
+  box-shadow: 0 0 12px #1f6fe5;
+}
+
+.button.secondary {
+  background: #1e2d3d;
+  color: #a9c6ff;
+  border: 1px solid #3b4f63;
+}
+
+.button.secondary:hover {
+  background: #24364a;
+  color: #ffffff;
 }
 
 .image-grid img {

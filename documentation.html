@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Anti-Wallhack Visibility System Documentation — Server-side visibility detection for Unity multiplayer games.">
+    <title>Documentation — Anti-Wallhack Visibility System</title>
+    <link rel="stylesheet" href="docs-style.css">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand" style="align-items:center;">
+      <!-- If you want to use image: replace src with 'icon.png' -->
+      <img src="icon.png" alt="logo" onerror="this.style.display='none'">
+      <div>
+        <h1>Anti-Wallhack Visibility System</h1>
+        <p style="margin-top:4px;color:var(--muted);font-size:0.9rem">Documentation — Extreme World Studio</p>
+      </div>
+    </div>
+
+    <button class="mobile-toggle" id="toggleSidebar">☰ Menu</button>
+
+    <div style="margin-left:auto; display:flex; gap:12px; align-items:center;">
+      <a href="index.html" style="color:var(--muted); text-decoration:none; border:1px solid rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px;">Home</a>
+      <a href="Documentation.pdf" download style="color:var(--accent); text-decoration:none; padding:8px 12px; border-radius:8px; border:1px solid rgba(29,161,242,0.08);">⬇️ Download PDF</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebarNav" aria-label="Documentation navigation">
+      <h3>Contents</h3>
+      <ul>
+        <li><a href="#overview" class="nav-link active"><span class="dot"></span> Overview</a></li>
+        <li><a href="#setup" class="nav-link"><span class="dot"></span> Setup</a></li>
+        <li><a href="#components" class="nav-link"><span class="dot"></span> Components</a></li>
+        <li><a href="#howitworks" class="nav-link"><span class="dot"></span> How It Works</a></li>
+        <li><a href="#customization" class="nav-link"><span class="dot"></span> Customization</a></li>
+        <li><a href="#integration"class="nav-link"><span class="dot"></span> Integration</a></li>
+        <li><a href="#gizmos" class="nav-link"><span class="dot"></span> Gizmos & Editor Tools</a></li>
+        <li><a href="#troubleshooting" class="nav-link"><span class="dot"></span> Troubleshooting</a></li>
+        <li><a href="#faq" class="nav-link"><span class="dot"></span> FAQ</a></li>
+      </ul>
+
+      <div style="margin-top:22px; font-size:0.9rem; color:var(--muted);">
+        <strong>Version:</strong> 1.0<br>
+        <strong>Author:</strong> Extreme World Studio
+      </div>
+    </nav>
+
+    <!-- Main content -->
+    <main class="content" id="mainContent">
+
+      <div class="mini-header">
+        <div>
+          <h2 class="section-title">Documentation</h2>
+          <div class="meta-row">
+            <div>🔒 Anti-Wallhack Visibility System</div>
+            <div>•</div>
+            <div>Server-Side visibility for Unity multiplayer</div>
+          </div>
+        </div>
+        <div class="actions">
+          <a href="index.html">← Back to project</a>
+        </div>
+      </div>
+
+      <!-- Overview -->
+      <section id="overview" class="card">
+        <h2 class="section-title">Overview</h2>
+        <p>
+          <strong>Anti-Wallhack Visibility System</strong> is a Unity-based server-side solution designed to prevent wallhacks and unauthorized player detection in competitive or multiplayer games.
+          It validates whether a player truly has line-of-sight to another using precise linecast checks and directional sampling, ensuring visibility is based on legitimate rendering logic and not client-side manipulation.
+        </p>
+
+        <h3>Core Purpose</h3>
+        <ul class="features">
+          <li>Prevents wallhacks by validating visibility through geometry</li>
+          <li>Ensures that visibility logic is server-authoritative</li>
+          <li>Uses safe rendering logic based on face-aligned normals and line sampling</li>
+        </ul>
+
+        <h3>What it Offers</h3>
+        <ul class="features">
+          <li>Observer-based visibility sampling</li>
+          <li>Dynamic line generation per face</li>
+          <li>Field-of-view validation with aspect ratio and pitch control</li>
+          <li>Real-time visibility events per observer/player pair</li>
+          <li>Editor tools for debugging visibility in play mode</li>
+          <li>UnityEvent integration for easy event handling in the Editor</li>
+        </ul>
+      </section>
+
+      <!-- Setup -->
+      <section id="setup" class="card">
+        <h2 class="section-title">Setup</h2>
+
+        <h3>1. Add the ObserverManager</h3>
+        <p>
+          Create an empty GameObject in your scene named <code>ObserverManager</code> and attach the <code>ObserverManager</code> component. This component manages all observers and players in the visibility system.
+          Note: <code>ObserverManager</code> uses <code>[DefaultExecutionOrder(-200)]</code> to ensure it initializes early in the Unity update cycle.
+        </p>
+
+        <h3>2. Add PlayerObserver to Observers</h3>
+        <p>Attach <code>PlayerObserver</code> to the GameObject representing the player camera (camera, AI or player entity). The GameObject must track the position and rotation of the player's camera.</p>
+        <p><strong>Configuration examples</strong>:</p>
+        <pre>
+[ SerializeField ] private float cameraFOVAngle = 60f;
+[ SerializeField ] private float viewDistance = 30f;
+[ SerializeField ] private Vector2 aspectRatio = new (16f, 9f);
+[ SerializeField ] private bool showGizmos = true;
+        </pre>
+
+        <h3>3. Add PlayerVisibilityDetector to Players</h3>
+        <p>
+          Attach <code>PlayerVisibilityDetector</code> to each player to be detected (preferably at the root of the player GameObject). A <code>BoxCollider</code> (playerBox) is required to calculate face-aligned normals and generate sampling lines.
+        </p>
+        <p><strong>Layer and Collider notes</strong>:</p>
+        <ul class="features">
+          <li>Place the <code>BoxCollider</code> on a child GameObject of the player to ensure proper transforms</li>
+          <li>Configure <code>obstaclesMask</code> to include layers for walls/obstacles</li>
+        </ul>
+
+        <h3>4. (Optional) Add VisibilityUnityEventRelay</h3>
+        <p>
+          To handle visibility events without scripting, attach <code>VisibilityUnityEventRelay</code> to the same GameObject as <code>PlayerVisibilityDetector</code> and configure the <code>onVisibilityChanged</code> UnityEvent in the Inspector.
+        </p>
+
+        <h3>5. Connect Components</h3>
+        <p>PlayerObserver, PlayerVisibilityDetector, and VisibilityUnityEventRelay auto-register with the ObserverManager at runtime.</p>
+
+        <h3>6. Enable Gizmos for Debugging</h3>
+        <p>In the Scene view, enable Gizmos to visualize FOV cones, face normals, and linecast paths.</p>
+      </section>
+
+      <!-- Components -->
+      <section id="components" class="card">
+        <h2 class="section-title">Components</h2>
+
+        <h3>ObserverManager</h3>
+        <p>
+          Manages registration and unregistration of observers and players, tracks visibility states and dispatches <code>OnVisibilityChanged</code> events. Reuses observer IDs for efficiency. Uses <code>[DefaultExecutionOrder(-200)]</code> to initialize early.
+        </p>
+        <p><strong>Key fields and methods:</strong></p>
+        <ul class="features">
+          <li>Instance (singleton)</li>
+          <li>OnVisibilityChanged (event)</li>
+          <li>RegisterObserver / RegisterPlayer / UnregisterPlayer</li>
+          <li>ChangeVisibility / IsPlayerVisibleToObserver / GetAllPlayersExcept</li>
+        </ul>
+
+        <h3>PlayerObserver</h3>
+        <p>
+          Represents the player's camera, tracking position and rotation. Defines FOV params and performs visibility checks based on distance, horizontal and vertical angles.
+        </p>
+        <p><strong>Key fields:</strong> <code>cameraFOVAngle</code>, <code>viewDistance</code>, <code>aspectRatio</code>, <code>showGizmos</code>.</p>
+
+        <h3>PlayerVisibilityDetector</h3>
+        <p>
+          Calculates face normals, performs linecasts (fixed and dynamic lines), tracks visibility per observer, and notifies <code>ObserverManager</code>.
+        </p>
+
+        <h3>VisibilityUnityEventRelay</h3>
+        <p>
+          Relays visibility events to a UnityEvent for easy editor configuration. Requires <code>PlayerVisibilityDetector</code> on the same GameObject.
+        </p>
+
+        <h3>ObserverManagerEditor</h3>
+        <p>
+          Custom inspector for debugging (editor-only, no runtime impact). Shows lists and provides debug controls.
+        </p>
+      </section>
+
+      <!-- How It Works -->
+      <section id="howitworks" class="card">
+        <h2 class="section-title">How It Works</h2>
+        <p>
+          The system uses a combination of Field of View (FOV), face-aligned normals, and line sampling to determine if a player is visible to an observer. Linecast validation ensures no obstacles block sampled lines.
+        </p>
+
+        <h3>Core concepts</h3>
+        <ul class="features">
+          <li>Field of View (FOV) — vertical and horizontal angles</li>
+          <li>Face-Aligned Normals — sample directions from bounding box faces</li>
+          <li>Line Sampling — fixed and dynamic lines per face</li>
+          <li>Linecast Validation — physics checks for unobstructed paths</li>
+          <li>Dynamic Line Speed — scanning speed for dynamic sampling</li>
+        </ul>
+
+        <h3>Example flow</h3>
+        <ol style="color:var(--muted);">
+          <li>PlayerObserver detects players in FOV based on cameraFOVAngle and aspectRatio.</li>
+          <li>System calculates normals and sampling lines (fixed + dynamic).</li>
+          <li>Linecasts are performed for both fixed and dynamic lines.</li>
+          <li>If any line reaches the target, visibility is confirmed.</li>
+          <li>ObserverManager updates state and triggers events via OnVisibilityChanged or VisibilityUnityEventRelay.</li>
+        </ol>
+
+        <h3>Networking note</h3>
+        <p>
+          For deterministic multiplayer frameworks (e.g., Photon Fusion), call visibility logic in fixed-tick network methods (e.g., <code>FixedUpdateNetwork()</code>) — avoid Render() or Update() for linecast-based checks.
+        </p>
+      </section>
+
+      <!-- Customization -->
+      <section id="customization" class="card">
+        <h2 class="section-title">Customization</h2>
+
+        <h3>Field of View settings</h3>
+        <p>Adjust <code>cameraFOVAngle</code>, <code>viewDistance</code> and <code>aspectRatio</code> to match the player's camera.</p>
+
+        <h3>Line Sampling resolution</h3>
+        <p>Tune <code>fixedLineCount</code>, <code>dynamicLineCount</code> and <code>dynamicLineSpeed</code> to balance accuracy and performance. Lower counts for distant targets.</p>
+
+        <h3>Obstacle layers</h3>
+        <p>Use <code>obstaclesMask</code> to include relevant layers that block visibility, avoiding false positives.</p>
+
+        <h3>Event handling</h3>
+        <p>Use <code>VisibilityUnityEventRelay</code> (recommended for editor-level integration) or subscribe programmatically to <code>ObserverManager.OnVisibilityChanged</code>.</p>
+
+        <h3>Gizmo visualization</h3>
+        <p>Toggle <code>showGizmos</code> to visualize normals, cones, fixed/dynamic lines and detected lines in the Scene view.</p>
+
+        <h3>Performance tips</h3>
+        <ul class="features">
+          <li>Adjust <code>dynamicLineSpeed</code> for accuracy/performance trade-off</li>
+          <li>Lower line counts for distant targets</li>
+          <li>Disable gizmos in builds</li>
+          <li>Use layer masks to limit linecasts</li>
+          <li>Pool data and profile frequently</li>
+        </ul>
+      </section>
+
+    <!-- Integration -->
+    <section id="integration">
+    <h2>🔗 Integration Examples (full)</h2>
+    <p>
+      Full integration examples for the <strong>Anti-Wallhack Visibility System</strong>. Select a framework tab to view the complete classes and notes.
+    </p>
+
+    <!-- TAB BUTTONS -->
+    <div class="tab-buttons" role="tablist" aria-label="Integration framework tabs">
+      <button class="tab-link active" data-tab="fusion" role="tab">Photon Fusion</button>
+      <button class="tab-link" data-tab="mirror" role="tab">Mirror</button>
+      <button class="tab-link" data-tab="netcode" role="tab">Netcode for GameObjects</button>
+      <button class="tab-link" data-tab="pun" role="tab">Photon PUN</button>
+      <button class="tab-link" data-tab="fishnet" role="tab">Fish-Networking</button>
+      <button class="tab-link" data-tab="footstep" role="tab">Network Footstep Sound</button>
+    </div>
+
+    <!-- TAB CONTENT: PHOTON FUSION -->
+    <div id="fusion" class="tab-content active" role="tabpanel">
+      <h3>Photon Fusion</h3>
+      <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.Forward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
+
+      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+  using ExtremeWorld.AntiWallhack.Core;
+  using Fusion;
+  using UnityEngine;
+
+  public class PlayerVisibilityHandler : MonoBehaviour
+  {
+      [SerializeField] private NetworkTRSP networkTransform; // or your network transform wrapper
+      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
+
+      public void ToggleComponent(bool state)
+      {
+          // enable/disable network transform or relevant sync component
+          if (networkTransform != null)
+              networkTransform.enabled = state;
+
+          if (!state)
+              transform.position = _hiddenPosition; // hide when not visible
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerObserver.cs
+  using Fusion;
+  using UnityEngine;
+
+  public class PlayerObserver : NetworkBehaviour
+  {
+      [Networked] public int ObserverId { get; private set; }
+
+      // FixedUpdateNetwork runs on Fusion's network ticks
+      public override void FixedUpdateNetwork()
+      {
+          // If server, perform detection. Runner.Forward ensures execution only on forward tick (no rollback execution)
+          if (Runner.IsServer && Runner.Forward)
+          {
+              DetectVisiblePlayersByFOV();
+          }
+      }
+
+      private void DetectVisiblePlayersByFOV()
+      {
+          // Example: compute FOV, sample players, call ObserverManager.ChangeVisibility(...)
+      }
+
+      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+      {
+          // If visibility change affects this observer, send RPC to player owner
+          if (observerId != ObserverId || !Runner.IsServer) return;
+
+          RPC_VisibilityState(player.Object.InputAuthority, isVisible);
+      }
+
+      [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+      private void RPC_VisibilityState(PlayerRef playerRef, NetworkBool state)
+      {
+          // On client side, perform local actions or toggle components
+          if (Runner.IsServer) return;
+          if (Runner.TryGetPlayerObject(playerRef, out var networkObject) &&
+              networkObject.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+          {
+              handler.ToggleComponent(state);
+          }
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+  using Fusion;
+  using UnityEngine;
+
+  public class PlayerVisibilityDetector : NetworkBehaviour
+  {
+      [SerializeField] private BoxCollider playerBox;
+      [SerializeField] private LayerMask obstaclesMask;
+      // sampling params...
+      public override void FixedUpdateNetwork()
+      {
+          // ✅ Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
+          if (Runner.IsServer && Runner.Forward)
+              UpdateVisibilityFromAlignedNormals();
+      }
+
+      private void UpdateVisibilityFromAlignedNormals()
+      {
+          // Implementation:
+          //  - Calculate face normals from playerBox
+          //  - Generate sampling lines (fixed + dynamic)
+          //  - Perform Linecasts (Physics.Linecast) using obstaclesMask
+          //  - Notify ObserverManager when visibility changes
+      }
+  }
+  </code></pre>
+
+      <p><em>Notes:</em>  
+        - Replace <code>NetworkTRSP</code> with your networking transform wrapper if needed.  
+        - Keep visibility checks on server (host) only. Use <code>Runner.Forward</code> to ensure valid forward ticks in Fusion.
+      </p>
+    </div>
+
+    <!-- TAB CONTENT: MIRROR -->
+    <div id="mirror" class="tab-content" role="tabpanel">
+      <h3>Mirror</h3>
+      <p>Mirror examples using <code>NetworkBehaviour</code>; run detection only on <code>isServer</code> and while component is enabled.</p>
+
+      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+  using Mirror;
+  using UnityEngine;
+
+  public class PlayerVisibilityHandler : NetworkBehaviour
+  {
+      [SerializeField] private NetworkTransform networkTransform;
+      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
+
+      public void ToggleComponent(bool state)
+      {
+          if (networkTransform != null)
+              networkTransform.enabled = state;
+
+          if (!state)
+              transform.position = _hiddenPosition;
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerObserver.cs
+  using Mirror;
+  using UnityEngine;
+
+  public class PlayerObserver : NetworkBehaviour
+  {
+      [SyncVar] public int ObserverId;
+
+      private void FixedUpdate()
+      {
+          // Mirror: guard by server authority and ensure component active
+          if (isServer && isActiveAndEnabled)
+              DetectVisiblePlayersByFOV();
+      }
+
+      private void DetectVisiblePlayersByFOV()
+      {
+          // Compute FOV, sample players, call ObserverManager.ChangeVisibility(...)
+      }
+
+      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+      {
+          if (observerId != ObserverId || !isServer) return;
+          // Send target RPC to client to toggle their visibility handler
+          RpcVisibilityState(player.netIdentity.connectionToClient, isVisible);
+      }
+
+      [TargetRpc]
+      private void RpcVisibilityState(NetworkConnection target, bool state)
+      {
+          if (target.identity != null &&
+              target.identity.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+          {
+              handler.ToggleComponent(state);
+          }
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+  using Mirror;
+  using UnityEngine;
+
+  public class PlayerVisibilityDetector : NetworkBehaviour
+  {
+      [SerializeField] private BoxCollider playerBox;
+      [SerializeField] private LayerMask obstaclesMask;
+
+      private void FixedUpdate()
+      {
+          // Mirror: run only on active server
+          if (isServer && isActiveAndEnabled)
+              UpdateVisibilityFromAlignedNormals();
+      }
+
+      private void UpdateVisibilityFromAlignedNormals()
+      {
+          // Mirror implementation for LOS checks
+      }
+  }
+  </code></pre>
+
+      <p><em>Mirror notes:</em> use <code>isServer</code> plus component enabled checks. Use Mirror RPCs (<code>TargetRpc</code> / <code>ClientRpc</code>) for notifying clients.</p>
+    </div>
+
+    <!-- TAB CONTENT: NETCODE FOR GAMEOBJECTS -->
+    <div id="netcode" class="tab-content" role="tabpanel">
+      <h3>Netcode for GameObjects (Unity Netcode)</h3>
+
+      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+  using Unity.Netcode;
+  using UnityEngine;
+
+  public class PlayerVisibilityHandler : NetworkBehaviour
+  {
+      [SerializeField] private Unity.Netcode.Components.NetworkTransform networkTransform;
+      private readonly Vector3 _hiddenPosition = new Vector3(0f,0f,0f);
+
+      public void ToggleComponent(bool state)
+      {
+          if (networkTransform != null)
+              networkTransform.enabled = state;
+
+          if (!state)
+              transform.position = _hiddenPosition;
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerObserver.cs
+  using Unity.Netcode;
+  using UnityEngine;
+
+  public class PlayerObserver : NetworkBehaviour
+  {
+      public NetworkVariable<int> ObserverId = new NetworkVariable<int>(0);
+
+      public override void FixedUpdateNetwork()
+      {
+          if (IsServer && IsSpawned)
+              DetectVisiblePlayersByFOV();
+      }
+
+      private void DetectVisiblePlayersByFOV()
+      {
+          // Netcode detection logic
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+  using Unity.Netcode;
+  using UnityEngine;
+
+  public class PlayerVisibilityDetector : NetworkBehaviour
+  {
+      [SerializeField] private BoxCollider playerBox;
+      [SerializeField] private LayerMask obstaclesMask;
+
+      public override void FixedUpdateNetwork()
+      {
+          // Run on server and only for spawned network objects
+          if (IsServer && IsSpawned)
+              UpdateVisibilityFromAlignedNormals();
+      }
+
+      private void UpdateVisibilityFromAlignedNormals()
+      {
+          // Implementation for Netcode (FixedUpdateNetwork usage)
+      }
+  }
+  </code></pre>
+
+      <p><em>Netcode notes:</em> use <code>FixedUpdateNetwork</code> or server-side guards; use <code>ClientRpc</code> for notifications.</p>
+    </div>
+
+    <!-- TAB CONTENT: PHOTON PUN -->
+    <div id="pun" class="tab-content" role="tabpanel">
+      <h3>Photon PUN</h3>
+
+      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+  using Photon.Pun;
+  using UnityEngine;
+
+  public class PlayerVisibilityHandler : MonoBehaviourPun
+  {
+      [SerializeField] private PhotonTransformView photonTransformView;
+      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
+
+      public void ToggleComponent(bool state)
+      {
+          if (photonTransformView != null)
+              photonTransformView.enabled = state;
+
+          if (!state)
+              transform.position = _hiddenPosition;
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerObserver.cs
+  using Photon.Pun;
+  using UnityEngine;
+
+  public class PlayerObserver : MonoBehaviourPun
+  {
+      public int ObserverId { get; private set; }
+
+      private void FixedUpdate()
+      {
+          if (PhotonNetwork.IsMasterClient)
+              DetectVisiblePlayersByFOV();
+      }
+
+      private void DetectVisiblePlayersByFOV()
+      {
+          // PUN detection logic
+      }
+
+      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+      {
+          if (observerId != ObserverId || !PhotonNetwork.IsMasterClient) return;
+
+          photonView.RPC(nameof(RPC_VisibilityState), player.photonView.Owner, isVisible);
+      }
+
+      [PunRPC]
+      private void RPC_VisibilityState(bool state, PhotonMessageInfo info)
+      {
+          var sender = PhotonView.Find(info.Sender.ActorNumber);
+          if (sender != null && sender.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+          {
+              handler.ToggleComponent(state);
+          }
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+  using Photon.Pun;
+  using UnityEngine;
+
+  public class PlayerVisibilityDetector : MonoBehaviourPun
+  {
+      [SerializeField] private BoxCollider playerBox;
+      [SerializeField] private LayerMask obstaclesMask;
+
+      private void FixedUpdate()
+      {
+          if (PhotonNetwork.IsMasterClient)
+              UpdateVisibilityFromAlignedNormals();
+      }
+
+      private void UpdateVisibilityFromAlignedNormals()
+      {
+          // PUN server-authoritative LOS checks
+      }
+  }
+  </code></pre>
+
+      <p><em>PUN notes:</em> master client acts as server; use <code>photonView.RPC</code> to notify clients.</p>
+    </div>
+
+    <!-- TAB CONTENT: FISH-NETWORKING -->
+    <div id="fishnet" class="tab-content" role="tabpanel">
+      <h3>Fish-Networking</h3>
+
+      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+  using FishNet.Object;
+  using UnityEngine;
+
+  public class PlayerVisibilityHandler : NetworkBehaviour
+  {
+      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
+
+      public void ToggleComponent(bool state)
+      {
+          if (!state)
+              transform.position = _hiddenPosition;
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerObserver.cs
+  using FishNet.Object;
+  using UnityEngine;
+
+  public class PlayerObserver : NetworkBehaviour
+  {
+      public int ObserverId;
+
+      public override void FixedUpdateNetwork()
+      {
+          // FishNet host/server tick execution if available
+          if (IsServer)
+              DetectVisiblePlayersByFOV();
+      }
+
+      private void DetectVisiblePlayersByFOV()
+      {
+          // FishNet detection code
+      }
+
+      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+      {
+          if (observerId != ObserverId || !IsServer) return;
+
+          if (player.Owner.IsValid)
+              RpcVisibilityState(player.Owner, isVisible);
+      }
+
+      [TargetRpc]
+      private void RpcVisibilityState(NetworkConnection conn, bool state)
+      {
+          if (conn.FirstObject != null &&
+              conn.FirstObject.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+          {
+              handler.ToggleComponent(state);
+          }
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+  using FishNet.Object;
+  using UnityEngine;
+
+  public class PlayerVisibilityDetector : NetworkBehaviour
+  {
+      [SerializeField] private BoxCollider playerBox;
+      [SerializeField] private LayerMask obstaclesMask;
+
+      public override void FixedUpdateNetwork()
+      {
+          // Run only on server host ticks
+          if (IsServer)
+              UpdateVisibilityFromAlignedNormals();
+      }
+
+      private void UpdateVisibilityFromAlignedNormals()
+      {
+          // FishNet visibility detection
+      }
+  }
+  </code></pre>
+
+      <p><em>FishNet notes:</em> adapt RPC/TargetRpc usage according to FishNet API; ensure server-only execution.</p>
+    </div>
+
+    <!-- TAB CONTENT: FOOTSTEP SOUND -->
+    <div id="footstep" class="tab-content" role="tabpanel">
+      <h3>Network Footstep Sound (examples per framework)</h3>
+      <p>Examples below show how to trigger footstep sounds across the network when appropriate.</p>
+
+      <pre><code class="language-cs">// NetworkFootStepSound (Photon Fusion)
+  using Fusion;
+  using UnityEngine;
+
+  public class NetworkFootStepSound : NetworkBehaviour
+  {
+      [SerializeField] private AudioClip[] footStepClips;
+
+      public void PlaySound(int index)
+      {
+          if (Object.HasStateAuthority)
+              RPC_PlaySound(index);
+      }
+
+      [Rpc(RpcSources.StateAuthority, RpcTargets.Proxies)]
+      private void RPC_PlaySound(int index)
+      {
+          if (index >= 0 && index < footStepClips.Length)
+              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// NetworkFootStepSound (Mirror)
+  using Mirror;
+  using UnityEngine;
+
+  public class NetworkFootStepSound : NetworkBehaviour
+  {
+      [SerializeField] private AudioClip[] footStepClips;
+
+      [Command]
+      public void CmdPlaySound(int index)
+      {
+          RpcPlaySound(index);
+      }
+
+      [ClientRpc(includeOwner = false)]
+      private void RpcPlaySound(int index)
+      {
+          if (index >= 0 && index < footStepClips.Length)
+              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// NetworkFootStepSound (Netcode for GameObjects)
+  using Unity.Netcode;
+  using UnityEngine;
+
+  public class NetworkFootStepSound : NetworkBehaviour
+  {
+      [SerializeField] private AudioClip[] footStepClips;
+
+      public void PlaySound(int index)
+      {
+          if (IsServer)
+              PlaySoundClientRpc(index);
+      }
+
+      [ClientRpc]
+      private void PlaySoundClientRpc(int index)
+      {
+          if (index >= 0 && index < footStepClips.Length)
+              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// NetworkFootStepSound (Photon PUN)
+  using Photon.Pun;
+  using UnityEngine;
+
+  public class NetworkFootStepSound : MonoBehaviourPun
+  {
+      [SerializeField] private AudioClip[] footStepClips;
+
+      public void PlaySound(int index)
+      {
+          if (PhotonNetwork.IsMasterClient)
+              photonView.RPC(nameof(RPC_PlaySound), RpcTarget.Others, index);
+      }
+
+      [PunRPC]
+      private void RPC_PlaySound(int index)
+      {
+          if (index >= 0 && index < footStepClips.Length)
+              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+      }
+  }
+  </code></pre>
+
+      <pre><code class="language-cs">// NetworkFootStepSound (Fish-Networking)
+  using FishNet.Object;
+  using UnityEngine;
+
+  public class NetworkFootStepSound : NetworkBehaviour
+  {
+      [SerializeField] private AudioClip[] footStepClips;
+
+      public void PlaySound(int index)
+      {
+          if (IsServer)
+              RpcPlaySound(index);
+      }
+
+      [ObserversRpc(ExcludeOwner = true)]
+      private void RpcPlaySound(int index)
+      {
+          if (index >= 0 && index < footStepClips.Length)
+              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+      }
+  }
+  </code></pre>
+
+      <p><em>Footstep notes:</em> choose the pattern that matches your networking framework; ensure server authority when triggering sound RPCs.</p>
+    </div>
+
+  </section>
+
+  </section>
+
+      <!-- Gizmos & Editor Tools -->
+      <section id="gizmos" class="card">
+        <h2 class="section-title">Gizmos & Editor Tools</h2>
+        <p>
+          The asset provides editor tools for real-time debugging:
+        </p>
+        <ul class="features">
+          <li>Visualize face normals</li>
+          <li>Fixed and dynamic sampling lines</li>
+          <li>Detection cone (green for visible, red for not)</li>
+          <li>Visibility status indicators with distinct colors for fixed/dynamic/detected lines</li>
+        </ul>
+
+        <h3>ObserverManagerEditor</h3>
+        <p>Custom inspector shows observer/player lists and visibility status for debugging editor workflows.</p>
+      </section>
+
+      <!-- Troubleshooting -->
+      <section id="troubleshooting" class="card">
+        <h2 class="section-title">Troubleshooting</h2>
+
+        <h3>Players not detected — possible causes</h3>
+        <ul class="features">
+          <li>FOV angle or view distance too low</li>
+          <li>Aspect ratio incorrect</li>
+          <li>Sampling lines blocked by obstaclesMask misconfiguration</li>
+          <li>playerBox not correctly placed as a child GameObject</li>
+          <li>Insufficient dynamicLineSpeed</li>
+          <li>PlayerObserver misaligned with camera</li>
+        </ul>
+
+        <h3>Events not firing — possible causes</h3>
+        <ul class="features">
+          <li>ObserverManager missing or inactive</li>
+          <li>Registration failed</li>
+          <li>Visibility state not changing due to low dynamicLineSpeed</li>
+          <li>VisibilityUnityEventRelay not configured or missing PlayerVisibilityDetector</li>
+          <li>Observer registration hierarchy invalid</li>
+        </ul>
+
+        <h3>Gizmos not showing</h3>
+        <ul class="features">
+          <li>Gizmos disabled</li>
+          <li>Scene view not focused</li>
+          <li><code>showGizmos</code> false</li>
+        </ul>
+
+        <p><strong>Solutions:</strong> Verify masks, ensure components are active, tune dynamicLineSpeed, and enable Gizmos for debugging.</p>
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" class="card">
+        <h2 class="section-title">FAQ</h2>
+
+        <h3>Does this system work with Photon Fusion or PUN 2?</h3>
+        <p>Yes. Fully compatible. Use server/host logic and sync visibility states across clients. For Fusion prefer FixedUpdateNetwork() integration.</p>
+
+        <h3>Can I use this for AI agents?</h3>
+        <p>Yes. Observers can represent AI entities and VisibilityUnityEventRelay can trigger AI behaviours.</p>
+
+        <h3>Is it compatible with URP or HDRP?</h3>
+        <p>Yes. The system is rendering-independent and uses physics and geometry.</p>
+
+        <h3>Does it support mobile platforms?</h3>
+        <p>Yes. Reduce dynamicLineSpeed and line counts to optimize performance.</p>
+
+        <h3>Can I customize the visibility logic?</h3>
+        <p>Yes. The system is modular; override sampling or add filters as needed.</p>
+      </section>
+
+      <footer class="docs-footer">
+        <p>© 2025 Extreme World Studio — Anti-Wallhack Visibility System</p>
+        <p>Made with Unity • AI-assisted content disclosed.</p>
+      </footer>
+
+    </main>
+  </div>
+
+  <!-- Small JS: sidebar toggle, smooth scroll and scrollspy -->
+  <script>
+    // Sidebar toggle for mobile
+    const toggleBtn = document.getElementById('toggleSidebar');
+    const sidebar = document.getElementById('sidebarNav');
+    toggleBtn && toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+
+    // Smooth scroll for nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        const target = document.querySelector(href);
+        if (target) {
+          const topOffset = 20; // small offset
+          const rect = target.getBoundingClientRect();
+          const absoluteTop = window.pageYOffset + rect.top - topOffset;
+          window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
+        }
+        // close sidebar on mobile
+        if (sidebar.classList.contains('open')) sidebar.classList.remove('open');
+      });
+    });
+
+    // Simple scrollspy - highlight current section in sidebar
+    const sections = document.querySelectorAll('main.content section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+    function onScrollSpy(){
+      const y = window.pageYOffset;
+      let currentId = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 100;
+        if (y >= top) currentId = sec.getAttribute('id');
+      });
+      navLinks.forEach(a => {
+        a.classList.remove('active');
+        if (a.getAttribute('href') === ('#' + currentId)) a.classList.add('active');
+      });
+    }
+    window.addEventListener('scroll', onScrollSpy);
+    onScrollSpy();
+
+    (function(){
+    const tabLinks = document.querySelectorAll('.tab-link');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabLinks.forEach(link => {
+      link.addEventListener('click', function(){
+        const target = this.dataset.tab;
+        // toggle active classes
+        tabLinks.forEach(b => b.classList.remove('active'));
+        tabContents.forEach(tc => tc.classList.remove('active'));
+        this.classList.add('active');
+        const el = document.getElementById(target);
+        if (el) el.classList.add('active');
+        // re-highlight all prism blocks (ensures code is formatted)
+        if (window.Prism) Prism.highlightAll();
+        // scroll into view a bit for UX
+        el && el.scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+
+    // Optional: support keyboard left/right to navigate tabs
+    document.addEventListener('keydown', (e) => {
+      const activeIndex = Array.from(tabLinks).findIndex(b => b.classList.contains('active'));
+      if (e.key === 'ArrowRight') {
+        const next = (activeIndex + 1) % tabLinks.length;
+        tabLinks[next].click();
+      } else if (e.key === 'ArrowLeft') {
+        const prev = (activeIndex - 1 + tabLinks.length) % tabLinks.length;
+        tabLinks[prev].click();
+      }
+    });
+    })();
+  </script>
+</body>
+</html>
