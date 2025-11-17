@@ -344,7 +344,7 @@
 
       <p><em>Notes:</em>  
         - Replace <code>NetworkTRSP</code> with your networking transform wrapper if needed.  
-        - Keep visibility checks on server (host) only. Use <code>Runner.Forward</code> to ensure valid forward ticks in Fusion.
+        - Keep visibility checks on server (host) only. Use <code>Runner.IsForward</code> to ensure valid forward ticks in Fusion.
       </p>
     </div>
 
@@ -492,11 +492,6 @@
               _deltaTime = Time.fixedDeltaTime;
               UpdateVisibilityFromAlignedNormals();
           }
-      }
-
-      private void UpdateVisibilityFromAlignedNormals()
-      {
-          // Implementation for Netcode (FixedUpdateNetwork usage)
       }
   }
   </code></pre>
