@@ -239,9 +239,9 @@
 
     <!-- Integration -->
     <section id="integration">
-    <h2>🔗 Integration Examples (full)</h2>
+    <h2>Integration Examples (full)</h2>
     <p>
-      Full integration examples for the <strong>Anti-Wallhack Visibility System</strong>. Select a framework tab to view the complete classes and notes.
+      Full integration examples for the <strong>Anti-Wallhack Visibility System</strong>. Select a framework tab to view the complete classes and notes, and replace where necessary.
     </p>
 
     <!-- TAB BUTTONS -->
@@ -257,7 +257,7 @@
     <!-- TAB CONTENT: PHOTON FUSION -->
     <div id="fusion" class="tab-content active" role="tabpanel">
       <h3>Photon Fusion</h3>
-      <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.Forward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
+      <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.IsForward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
 
       <pre><code class="language-cs">// PlayerVisibilityHandler.cs
   using ExtremeWorld.AntiWallhack.Core;
@@ -281,7 +281,7 @@
   }
   </code></pre>
 
-      <pre><code class="language-cs">// PlayerObserver.cs
+  <pre><code class="language-cs">// PlayerObserver.cs
   using Fusion;
   using UnityEngine;
 
@@ -292,16 +292,14 @@
       // FixedUpdateNetwork runs on Fusion's network ticks
       public override void FixedUpdateNetwork()
       {
-          // If server, perform detection. Runner.Forward ensures execution only on forward tick (no rollback execution)
-          if (Runner.IsServer && Runner.Forward)
+          // If server, perform detection. Runner.IsForward ensures execution only on forward tick (no rollback execution)
+          if (Runner.IsServer && Runner.IsForward)
           {
+              var ping = (float)Runner.GetPlayerRtt(Object.InputAuthority);
+              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+
               DetectVisiblePlayersByFOV();
           }
-      }
-
-      private void DetectVisiblePlayersByFOV()
-      {
-          // Example: compute FOV, sample players, call ObserverManager.ChangeVisibility(...)
       }
 
       private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
@@ -318,7 +316,7 @@
           // On client side, perform local actions or toggle components
           if (Runner.IsServer) return;
           if (Runner.TryGetPlayerObject(playerRef, out var networkObject) &&
-              networkObject.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+              networkObject.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
           {
               handler.ToggleComponent(state);
           }
@@ -332,23 +330,14 @@
 
   public class PlayerVisibilityDetector : NetworkBehaviour
   {
-      [SerializeField] private BoxCollider playerBox;
-      [SerializeField] private LayerMask obstaclesMask;
-      // sampling params...
       public override void FixedUpdateNetwork()
       {
-          // ✅ Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
-          if (Runner.IsServer && Runner.Forward)
+          // Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
+          if (Runner.IsServer && Runner.IsForward)
+          {
+              _deltaTime = Runner.DeltaTime;
               UpdateVisibilityFromAlignedNormals();
-      }
-
-      private void UpdateVisibilityFromAlignedNormals()
-      {
-          // Implementation:
-          //  - Calculate face normals from playerBox
-          //  - Generate sampling lines (fixed + dynamic)
-          //  - Perform Linecasts (Physics.Linecast) using obstaclesMask
-          //  - Notify ObserverManager when visibility changes
+          }
       }
   }
   </code></pre>
@@ -396,12 +385,12 @@
       {
           // Mirror: guard by server authority and ensure component active
           if (isServer && isActiveAndEnabled)
-              DetectVisiblePlayersByFOV();
-      }
+          {
+              var ping = (float)NetworkTime.rtt * 1000f;
+              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
 
-      private void DetectVisiblePlayersByFOV()
-      {
-          // Compute FOV, sample players, call ObserverManager.ChangeVisibility(...)
+              DetectVisiblePlayersByFOV();
+          }
       }
 
       private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
@@ -415,7 +404,7 @@
       private void RpcVisibilityState(NetworkConnection target, bool state)
       {
           if (target.identity != null &&
-              target.identity.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+              target.identity.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
           {
               handler.ToggleComponent(state);
           }
@@ -429,19 +418,14 @@
 
   public class PlayerVisibilityDetector : NetworkBehaviour
   {
-      [SerializeField] private BoxCollider playerBox;
-      [SerializeField] private LayerMask obstaclesMask;
-
       private void FixedUpdate()
       {
           // Mirror: run only on active server
-          if (isServer && isActiveAndEnabled)
+          if (isServer && isActiveAndEnabled) 
+          {
+              _deltaTime = Time.deltaTime;
               UpdateVisibilityFromAlignedNormals();
-      }
-
-      private void UpdateVisibilityFromAlignedNormals()
-      {
-          // Mirror implementation for LOS checks
+          }
       }
   }
   </code></pre>
@@ -479,17 +463,17 @@
 
   public class PlayerObserver : NetworkBehaviour
   {
-      public NetworkVariable<int> ObserverId = new NetworkVariable<int>(0);
+      public NetworkVariable&lt;int&gt; ObserverId = new NetworkVariable&lt;int&gt;(0);
 
       public override void FixedUpdateNetwork()
       {
           if (IsServer && IsSpawned)
-              DetectVisiblePlayersByFOV();
-      }
+          {
+              var ping = (float)(NetworkManager.Singleton.NetworkTime.Rtt * 1000f);
+              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
 
-      private void DetectVisiblePlayersByFOV()
-      {
-          // Netcode detection logic
+              DetectVisiblePlayersByFOV();
+          }
       }
   }
   </code></pre>
@@ -500,14 +484,14 @@
 
   public class PlayerVisibilityDetector : NetworkBehaviour
   {
-      [SerializeField] private BoxCollider playerBox;
-      [SerializeField] private LayerMask obstaclesMask;
-
-      public override void FixedUpdateNetwork()
+      private void FixedUpdate()
       {
           // Run on server and only for spawned network objects
           if (IsServer && IsSpawned)
+          {
+              _deltaTime = Time.fixedDeltaTime;
               UpdateVisibilityFromAlignedNormals();
+          }
       }
 
       private void UpdateVisibilityFromAlignedNormals()
@@ -555,12 +539,12 @@
       private void FixedUpdate()
       {
           if (PhotonNetwork.IsMasterClient)
-              DetectVisiblePlayersByFOV();
-      }
+          {
+              var ping = (float)PhotonNetwork.GetPing();
+              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
 
-      private void DetectVisiblePlayersByFOV()
-      {
-          // PUN detection logic
+              DetectVisiblePlayersByFOV();
+          }
       }
 
       private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
@@ -574,7 +558,7 @@
       private void RPC_VisibilityState(bool state, PhotonMessageInfo info)
       {
           var sender = PhotonView.Find(info.Sender.ActorNumber);
-          if (sender != null && sender.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+          if (sender != null && sender.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
           {
               handler.ToggleComponent(state);
           }
@@ -588,18 +572,13 @@
 
   public class PlayerVisibilityDetector : MonoBehaviourPun
   {
-      [SerializeField] private BoxCollider playerBox;
-      [SerializeField] private LayerMask obstaclesMask;
-
       private void FixedUpdate()
       {
           if (PhotonNetwork.IsMasterClient)
+          {
+              _deltaTime = Time.deltaTime;
               UpdateVisibilityFromAlignedNormals();
-      }
-
-      private void UpdateVisibilityFromAlignedNormals()
-      {
-          // PUN server-authoritative LOS checks
+          }
       }
   }
   </code></pre>
@@ -613,14 +592,19 @@
 
       <pre><code class="language-cs">// PlayerVisibilityHandler.cs
   using FishNet.Object;
+  using FishNet.Component.Transforming;
   using UnityEngine;
 
   public class PlayerVisibilityHandler : NetworkBehaviour
   {
+      [SerializeField] private TransformSynchronizer transformSync;
       private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
 
       public void ToggleComponent(bool state)
       {
+          if (transformSync != null)
+              transformSync.enabled = state;
+
           if (!state)
               transform.position = _hiddenPosition;
       }
@@ -639,12 +623,12 @@
       {
           // FishNet host/server tick execution if available
           if (IsServer)
-              DetectVisiblePlayersByFOV();
-      }
+          {
+              var ping = (float)(base.TimeManager.RoundTripTime * 1000f);
+              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
 
-      private void DetectVisiblePlayersByFOV()
-      {
-          // FishNet detection code
+              DetectVisiblePlayersByFOV();
+          }
       }
 
       private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
@@ -659,7 +643,7 @@
       private void RpcVisibilityState(NetworkConnection conn, bool state)
       {
           if (conn.FirstObject != null &&
-              conn.FirstObject.TryGetComponent<PlayerVisibilityHandler>(out var handler))
+              conn.FirstObject.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
           {
               handler.ToggleComponent(state);
           }
@@ -673,19 +657,14 @@
 
   public class PlayerVisibilityDetector : NetworkBehaviour
   {
-      [SerializeField] private BoxCollider playerBox;
-      [SerializeField] private LayerMask obstaclesMask;
-
-      public override void FixedUpdateNetwork()
+      private void FixedUpdate()
       {
           // Run only on server host ticks
           if (IsServer)
-              UpdateVisibilityFromAlignedNormals();
-      }
-
-      private void UpdateVisibilityFromAlignedNormals()
-      {
-          // FishNet visibility detection
+          {
+              _deltaTime = Time.deltaTime;
+             UpdateVisibilityFromAlignedNormals();
+          }
       }
   }
   </code></pre>
