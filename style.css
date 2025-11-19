@@ -140,13 +140,11 @@ ul li {
   cursor: pointer;
 }
 
-/* Efeito de hover */
 .image-grid img:hover {
   transform: scale(1.03);
   box-shadow: 0 0 15px rgba(77,184,255,0.4);
 }
 
-/* Fundo escuro para visualização ampliada */
 .image-modal {
   display: none;
   position: fixed;
@@ -160,7 +158,6 @@ ul li {
   align-items: center;
 }
 
-/* Imagem ampliada */
 .image-modal img {
   max-width: 90%;
   max-height: 90%;
@@ -169,13 +166,11 @@ ul li {
   animation: fadeIn 0.3s ease;
 }
 
-/* Animação suave */
 @keyframes fadeIn {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Botão de fechar */
 .image-modal .close-btn {
   position: absolute;
   top: 20px;
@@ -190,6 +185,31 @@ ul li {
 
 .image-modal .close-btn:hover {
   color: #4db8ff;
+}
+
+.contact {
+  padding: 50px;
+  max-width: 900px;
+  margin: 0 auto 40px auto;
+  text-align: left;
+  border-radius: 12px;
+  background: #0f1a24;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+.contact h2 {
+  color: #4db8ff;
+  margin-bottom: 15px;
+}
+
+.email-contact a {
+  color: #4db8ff;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.email-contact a:hover {
+  text-decoration: underline;
 }
 
 footer {
