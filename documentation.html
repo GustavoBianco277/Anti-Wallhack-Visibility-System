@@ -259,54 +259,42 @@
       <h3>Photon Fusion</h3>
       <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.IsForward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
 
-      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-  using ExtremeWorld.AntiWallhack.Core;
+      <pre><code class="language-cs">// NetworkPlayerVisibilityHandler.cs
   using Fusion;
   using UnityEngine;
 
-  public class PlayerVisibilityHandler : MonoBehaviour
+  public class NetworkPlayerVisibilityHandler : MonoBehaviour
   {
       [SerializeField] private NetworkTRSP networkTransform; // or your network transform wrapper
-      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
-
-      public void ToggleComponent(bool state)
-      {
-          // enable/disable network transform or relevant sync component
-          if (networkTransform != null)
-              networkTransform.enabled = state;
-
-          if (!state)
-              transform.position = _hiddenPosition; // hide when not visible
-      }
   }
   </code></pre>
 
-  <pre><code class="language-cs">// PlayerObserver.cs
+  <pre><code class="language-cs">// NetworkPlayerObserver.cs
   using Fusion;
   using UnityEngine;
 
-  public class PlayerObserver : NetworkBehaviour
+  public class NetworkPlayerObserver : NetworkBehaviour
   {
-      [Networked] public int ObserverId { get; private set; }
-
       // FixedUpdateNetwork runs on Fusion's network ticks
       public override void FixedUpdateNetwork()
       {
           // If server, perform detection. Runner.IsForward ensures execution only on forward tick (no rollback execution)
           if (Runner.IsServer && Runner.IsForward)
           {
-              var ping = (float)Runner.GetPlayerRtt(Object.InputAuthority);
-              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              PingMS = (float) Runner.GetPlayerRtt(Object.InputAuthority) * 1000f;
+              CameraDirection = transform.forward;
 
-              DetectVisiblePlayersByFOV();
+              playerObserver.CalculateDynamicFOV(CameraDirection, PingMS);
+              playerObserver.DetectVisiblePlayersByFOV();
           }
       }
 
       private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
       {
           // If visibility change affects this observer, send RPC to player owner
-          if (observerId != ObserverId || !Runner.IsServer) return;
+          if (observerId != playerObserver.ObserverId || !Runner.IsServer) return;
 
+          playerObserver.IsVisible = isVisible;
           RPC_VisibilityState(player.Object.InputAuthority, isVisible);
       }
 
@@ -324,19 +312,19 @@
   }
   </code></pre>
 
-      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+      <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs
   using Fusion;
   using UnityEngine;
 
-  public class PlayerVisibilityDetector : NetworkBehaviour
+  public class NetworkPlayerVisibilityDetector : NetworkBehaviour
   {
       public override void FixedUpdateNetwork()
       {
           // Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
           if (Runner.IsServer && Runner.IsForward)
           {
-              _deltaTime = Runner.DeltaTime;
-              UpdateVisibilityFromAlignedNormals();
+              playerVisibilityDetector.DeltaTime = Runner.DeltaTime;
+              playerVisibilityDetector.UpdateVisibilityFromAlignedNormals();
           }
       }
   }
