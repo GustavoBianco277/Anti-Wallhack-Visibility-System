@@ -336,6 +336,15 @@ ul li {
 
 .cta {
   text-align: center;
+  padding: 50px 20px;
+  background: linear-gradient(180deg, #0f1a24, #0c141c);
+  border-radius: 12px;
+  margin-top: 40px;
+}
+
+.cta p {
+  color: #b5c1cc;
+  margin-bottom: 15px;
 }
 
 /* FOOTER */
