@@ -626,697 +626,892 @@ Show Gizmos = true;
 
       <!-- How It Works -->
       <section id="howitworks" class="card">
-        <h2 class="section-title">How It Works</h2>
-        <p>
-          The system uses a combination of Field of View (FOV), face-aligned normals, and line sampling to determine if a player is visible to an observer. Linecast validation ensures no obstacles block sampled lines.
-        </p>
+      <h2 class="section-title">How It Works</h2>
 
-        <h3>Core concepts</h3>
-        <ul class="features">
-          <li>Field of View (FOV) — vertical and horizontal angles</li>
-          <li>Face-Aligned Normals — sample directions from bounding box faces</li>
-          <li>Line Sampling — fixed and dynamic lines per face</li>
-          <li>Linecast Validation — physics checks for unobstructed paths</li>
-          <li>Dynamic Line Speed — scanning speed for dynamic sampling</li>
-        </ul>
+      <p>
+        The system determines player visibility using a combination of Field of View (FOV) filtering,
+        geometric sampling, and physics-based validation. All checks are executed on the server,
+        ensuring that visibility cannot be manipulated client-side.
+      </p>
 
-        <h3>Example flow</h3>
-        <ol style="color:var(--muted);">
-          <li>PlayerObserver detects players in FOV based on cameraFOVAngle and aspectRatio.</li>
-          <li>System calculates normals and sampling lines (fixed + dynamic).</li>
-          <li>Linecasts are performed for both fixed and dynamic lines.</li>
-          <li>If any line reaches the target, visibility is confirmed.</li>
-          <li>ObserverManager updates state and triggers events via OnVisibilityChanged or VisibilityUnityEventRelay.</li>
-        </ol>
+      <!-- CORE FLOW -->
+      <h3>Detection Pipeline</h3>
+      <ol style="color:var(--muted);">
+        <li><strong>FOV Filtering:</strong> The <code>PlayerObserver</code> first filters potential targets based on distance and camera angles.</li>
+        <li><strong>Geometry Sampling:</strong> The <code>PlayerVisibilityDetector</code> generates sampling lines across the target collider (box or cylinder).</li>
+        <li><strong>Linecast Validation:</strong> Each line is tested using physics checks to verify if there is a clear path.</li>
+        <li><strong>Obstacle Handling:</strong> Wall clamping ensures that visibility is blocked when obstacles are present.</li>
+        <li><strong>Visibility Decision:</strong> If at least one valid line reaches the target, the player is considered visible.</li>
+        <li><strong>Event Dispatch:</strong> The system updates visibility state and triggers events via <code>ObserverManager</code>.</li>
+      </ol>
 
-        <h3>Networking note</h3>
-        <p>
-          For deterministic multiplayer frameworks (e.g., Photon Fusion), call visibility logic in fixed-tick network methods (e.g., <code>FixedUpdateNetwork()</code>) — avoid Render() or Update() for linecast-based checks.
-        </p>
-        <div class="info-box">
-       💡 Expected behavior: A player is considered visible when at least one linecast successfully reaches the target without hitting obstacles.
-    </div>
-      </section>
+      <!-- CORE CONCEPTS -->
+      <h3>Core Concepts</h3>
+      <ul class="features">
+        <li><strong>Server-Side Authority</strong> → Prevents cheating and client manipulation</li>
+        <li><strong>Line Sampling</strong> → Uses multiple rays instead of a single check</li>
+        <li><strong>Dynamic Scanning</strong> → Improves detection accuracy over time</li>
+        <li><strong>Wall Clamping</strong> → Blocks visibility through obstacles</li>
+        <li><strong>State Stabilization</strong> → Prevents flickering visibility</li>
+      </ul>
+
+      <!-- PRO SECTION -->
+      <h3>Advanced Features <span class="pro-badge">PRO</span></h3>
+      <ul class="features">
+        <li>Cylindrical collider support for more realistic player shapes</li>
+        <li>Enhanced wall clamping for complex geometry and corner cases</li>
+        <li>Latency and velocity compensation for smoother gameplay</li>
+        <li>Animation-aware collider expansion</li>
+      </ul>
+
+      <div class="pro-box">
+        🚀 The Pro version improves reliability in competitive scenarios by reducing false positives
+        and handling edge cases such as high latency and partial visibility behind cover.
+      </div>
+
+      <!-- NETWORK NOTE -->
+      <h3>Networking Note</h3>
+      <p>
+        For deterministic multiplayer frameworks (e.g., Photon Fusion), visibility checks should run in fixed-tick methods
+        such as <code>FixedUpdateNetwork()</code>. Avoid using <code>Update()</code> or rendering loops for physics-based validation.
+      </p>
+
+    </section>
 
       <!-- How to Tune & Optimize -->
       <section id="customization" class="card">
         <h2 class="section-title">How to Tune & Optimize</h2>
 
-        <h3>Field of View settings</h3>
-        <p>Adjust <code>cameraFOVAngle</code>, <code>viewDistance</code> and <code>aspectRatio</code> to match the player's camera.</p>
+        <h3>Tuning, Optimization & Best Practices</h3>
+        <p>
+          The Anti-Wallhack Visibility System is highly configurable, allowing you to balance precision, responsiveness, and performance based on your game's needs.
+          Proper tuning ensures stable visibility detection while minimizing unnecessary computations.
+        </p>
 
-        <h3>Line Sampling resolution</h3>
-        <p>Tune <code>fixedLineCount</code>, <code>dynamicLineCount</code> and <code>dynamicLineSpeed</code> to balance accuracy and performance. Lower counts for distant targets.</p>
+        <h3>Performance vs Accuracy</h3>
+        <p>
+          The system relies on line-based visibility checks and compensation algorithms. Increasing precision typically means more calculations per frame.
+          Finding the right balance is essential, especially in multiplayer environments with many players.
+        </p>
 
-        <h3>Obstacle layers</h3>
-        <p>Use <code>obstaclesMask</code> to include relevant layers that block visibility, avoiding false positives.</p>
-
-        <h3>Event handling</h3>
-        <p>Use <code>VisibilityUnityEventRelay</code> (recommended for editor-level integration) or subscribe programmatically to <code>ObserverManager.OnVisibilityChanged</code>.</p>
-
-        <h3>Gizmo visualization</h3>
-        <p>Toggle <code>showGizmos</code> to visualize normals, cones, fixed/dynamic lines and detected lines in the Scene view.</p>
-
-        <h3>Performance tips</h3>
         <ul class="features">
-          <li>Adjust <code>dynamicLineSpeed</code> for accuracy/performance trade-off</li>
-          <li>Lower line counts for distant targets</li>
-          <li>Disable gizmos in builds</li>
-          <li>Use layer masks to limit linecasts</li>
-          <li>Pool data and profile frequently</li>
+          <li><strong>Higher line counts:</strong> Improves detection accuracy but increases CPU usage</li>
+          <li><strong>Lower line counts:</strong> Reduces cost but may introduce small visibility inaccuracies</li>
+          <li><strong>Dynamic lines:</strong> Provide better coverage over time with lower constant cost</li>
         </ul>
+
+        <h3>Observer Optimization</h3>
+        <p>
+          The <code>PlayerObserver</code> controls how visibility is calculated from the player's perspective.
+          Adjusting its parameters can significantly impact both performance and gameplay feel.
+        </p>
+
+        <ul class="features">
+          <li>Reduce <code>viewDistance</code> to limit unnecessary checks</li>
+          <li>Use <code>ClosestPoint</code> for faster FOV checks when high precision is not required</li>
+          <li>Adjust <code>smoothSpeed</code> to control how quickly visibility reacts to changes</li>
+        </ul>
+
+        <h3>Detection Stability</h3>
+        <p>
+          Sudden visibility changes can create flickering effects. The system includes stabilization mechanisms to ensure smoother transitions.
+        </p>
+
+        <ul class="features">
+          <li>Increase <code>stateStabilizeTime</code> to reduce flickering</li>
+          <li>Lower values improve responsiveness but may cause instability</li>
+        </ul>
+
+        <h3>Call Rate Optimization</h3>
+        <p>
+          The <code>ObserverManager</code> allows you to control how often visibility updates are executed.
+        </p>
+
+        <ul class="features">
+          <li><strong>Unlimited:</strong> Best accuracy, runs every frame</li>
+          <li><strong>Limited:</strong> Better performance, runs at a fixed rate</li>
+        </ul>
+
+        <p>
+          Use a limited call rate in large-scale multiplayer scenarios to significantly reduce CPU usage.
+        </p>
+
+        <div class="info-box">
+          💡 For most games, a balanced configuration provides better overall experience than maximum precision.
+        </div>
+
+        <h3>Advanced Optimization <span class="pro-badge">PRO</span></h3>
+        <p>
+          The Pro version introduces advanced compensation systems that improve accuracy under real-world network conditions.
+        </p>
+
+        <ul class="features">
+          <li><strong>Latency Compensation:</strong> Adjusts visibility based on network delay</li>
+          <li><strong>Velocity Prediction:</strong> Predicts player movement for smoother detection</li>
+          <li><strong>FOV Compensation:</strong> Expands visibility dynamically based on camera movement and ping</li>
+          <li><strong>Advanced Wall Clamping:</strong> Reduces false positives when players are close to walls</li>
+        </ul>
+
+        <p>
+          These systems are especially important in fast-paced multiplayer games where precision and fairness are critical.
+        </p>
+
+        <div class="warning-box">
+          ⚠️ Over-aggressive compensation values may cause players to become visible earlier than expected.
+        </div>
       </section>
 
-    <!-- Integration -->
-    <section id="integration">
-    <h2>Integration Examples (full)</h2>
-    <div class="info-box">
-    Choose your networking solution below. All examples are server-authoritative.
-    </div>
+      <!-- Integration -->
+      <section id="integration">
+        <h2>Integration Examples</h2>
+        <p>
+          This section provides complete, ready-to-use integration examples for the 
+          <strong>Anti-Wallhack Visibility System</strong> across multiple networking frameworks.
+        </p>
 
-    <ul class="integration-hints">
-      <li><strong>Photon Fusion:</strong> Best for high-performance multiplayer</li>
-      <li><strong>Mirror:</strong> Simple and flexible</li>
-      <li><strong>Netcode:</strong> Official Unity solution</li>
-      <li><strong>Photon PUN:</strong> Legacy but widely used</li>
-      <li><strong>FishNet:</strong> Advanced and performant</li>
-    </ul>
-    <p>
-      Full integration examples for the <strong>Anti-Wallhack Visibility System</strong>. Select a framework tab to view the complete classes and notes, and replace where necessary.
-    </p>
+        <p>
+          All examples follow a <strong>server-authoritative architecture</strong>, ensuring secure and consistent visibility detection in multiplayer environments.
+        </p>
 
-    <!-- TAB BUTTONS -->
-    <div class="tab-buttons" role="tablist" aria-label="Integration framework tabs">
-      <button class="tab-link active" data-tab="fusion" role="tab">Photon Fusion</button>
-      <button class="tab-link" data-tab="mirror" role="tab">Mirror</button>
-      <button class="tab-link" data-tab="netcode" role="tab">Netcode for GameObjects</button>
-      <button class="tab-link" data-tab="pun" role="tab">Photon PUN</button>
-      <button class="tab-link" data-tab="fishnet" role="tab">Fish-Networking</button>
-      <button class="tab-link" data-tab="footstep" role="tab">Network Footstep Sound</button>
-    </div>
+        <div class="info-box">
+          💡 Select your networking solution below to view full implementations and adapt them to your project.
+        </div>
 
-    <!-- TAB CONTENT: PHOTON FUSION -->
-    <div id="fusion" class="tab-content active" role="tabpanel">
-      <h3>Photon Fusion</h3>
-      <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.IsForward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
+        <ul class="integration-hints">
+          <li><strong>Photon Fusion:</strong> High-performance tick-based networking (recommended)</li>
+          <li><strong>Mirror:</strong> Simple and flexible server-authoritative solution</li>
+          <li><strong>Netcode for GameObjects:</strong> Official Unity networking framework</li>
+          <li><strong>Photon PUN:</strong> Legacy solution, still widely used</li>
+          <li><strong>Fish-Networking:</strong> Advanced and highly performant</li>
+        </ul>
 
-      <pre><code class="language-cs">// NetworkPlayerVisibilityHandler.cs
-  using Fusion;
-  using UnityEngine;
+        <div class="warning-box">
+          ⚠️ Visibility calculations should always run on the server to prevent exploits and ensure fair gameplay.
+        </div>
+        <p>
+          Each tab includes complete class examples, RPC handling, and best practices for visibility synchronization.
+        </p>
 
-  public class NetworkPlayerVisibilityHandler : MonoBehaviour
-  {
-      [SerializeField] private NetworkTRSP networkTransform; // or your network transform wrapper
-  }
-  </code></pre>
+        <!-- TAB BUTTONS -->
+        <div class="tab-buttons" role="tablist" aria-label="Integration framework tabs">
+          <button class="tab-link active" data-tab="fusion" role="tab">Photon Fusion</button>
+          <button class="tab-link" data-tab="mirror" role="tab">Mirror</button>
+          <button class="tab-link" data-tab="netcode" role="tab">Netcode for GameObjects</button>
+          <button class="tab-link" data-tab="pun" role="tab">Photon PUN</button>
+          <button class="tab-link" data-tab="fishnet" role="tab">Fish-Networking</button>
+          <button class="tab-link" data-tab="footstep" role="tab">Network Footstep Sound</button>
+        </div>
 
-  <pre><code class="language-cs">// NetworkPlayerObserver.cs
-  using Fusion;
-  using UnityEngine;
+        <!-- TAB CONTENT: PHOTON FUSION -->
+        <div id="fusion" class="tab-content active" role="tabpanel">
+          <h3>Photon Fusion</h3>
+          <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.IsForward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
 
-  public class NetworkPlayerObserver : NetworkBehaviour
-  {
-      // FixedUpdateNetwork runs on Fusion's network ticks
-      public override void FixedUpdateNetwork()
+          <pre><code class="language-cs">// NetworkPlayerVisibilityHandler.cs
+      using Fusion;
+      using UnityEngine;
+
+      public class NetworkPlayerVisibilityHandler : MonoBehaviour
       {
-          // If server, perform detection. Runner.IsForward ensures execution only on forward tick (no rollback execution)
-          if (Runner.IsServer && Runner.IsForward)
-          {
-              PingMS = (float) Runner.GetPlayerRtt(Object.InputAuthority) * 1000f;
-              CameraDirection = transform.forward;
+          [SerializeField] private NetworkTRSP networkTransform; // or your network transform wrapper
+      }
+      </code></pre>
 
-              playerObserver.CalculateDynamicFOV(CameraDirection, PingMS);
-              playerObserver.DetectVisiblePlayersByFOV();
+      <pre><code class="language-cs">// NetworkPlayerObserver.cs
+      using Fusion;
+      using UnityEngine;
+
+      public class NetworkPlayerObserver : NetworkBehaviour
+      {
+          // FixedUpdateNetwork runs on Fusion's network ticks
+          public override void FixedUpdateNetwork()
+          {
+              // If server, perform detection. Runner.IsForward ensures execution only on forward tick (no rollback execution)
+              if (Runner.IsServer && Runner.IsForward)
+              {
+                  PingMS = (float) Runner.GetPlayerRtt(Object.InputAuthority) * 1000f;
+                  CameraDirection = transform.forward;
+
+                  playerObserver.CalculateDynamicFOV(CameraDirection, PingMS);
+                  playerObserver.DetectVisiblePlayersByFOV();
+              }
+          }
+
+          private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          {
+              // If visibility change affects this observer, send RPC to player owner
+              if (observerId != playerObserver.ObserverId || !Runner.IsServer) return;
+
+              playerObserver.IsVisible = isVisible;
+              RPC_VisibilityState(player.Object.InputAuthority, isVisible);
+          }
+
+          [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
+          private void RPC_VisibilityState(PlayerRef playerRef, NetworkBool state)
+          {
+              // On client side, perform local actions or toggle components
+              if (Runner.IsServer) return;
+              if (Runner.TryGetPlayerObject(playerRef, out var networkObject) &&
+                  networkObject.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+              {
+                  handler.ToggleComponent(state);
+              }
           }
       }
+      </code></pre>
 
-      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs
+      using Fusion;
+      using UnityEngine;
+
+      public class NetworkPlayerVisibilityDetector : NetworkBehaviour
       {
-          // If visibility change affects this observer, send RPC to player owner
-          if (observerId != playerObserver.ObserverId || !Runner.IsServer) return;
-
-          playerObserver.IsVisible = isVisible;
-          RPC_VisibilityState(player.Object.InputAuthority, isVisible);
-      }
-
-      [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
-      private void RPC_VisibilityState(PlayerRef playerRef, NetworkBool state)
-      {
-          // On client side, perform local actions or toggle components
-          if (Runner.IsServer) return;
-          if (Runner.TryGetPlayerObject(playerRef, out var networkObject) &&
-              networkObject.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+          public override void FixedUpdateNetwork()
           {
-              handler.ToggleComponent(state);
+              // Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
+              if (Runner.IsServer && Runner.IsForward)
+              {
+                  playerVisibilityDetector.DeltaTime = Runner.DeltaTime;
+                  playerVisibilityDetector.UpdateVisibilityFromAlignedNormals();
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs
-  using Fusion;
-  using UnityEngine;
+          <p><em>Notes:</em>  
+            - Replace <code>NetworkTRSP</code> with your networking transform wrapper if needed.  
+            - Keep visibility checks on server (host) only. Use <code>Runner.IsForward</code> to ensure valid forward ticks in Fusion.
+          </p>
+        </div>
 
-  public class NetworkPlayerVisibilityDetector : NetworkBehaviour
-  {
-      public override void FixedUpdateNetwork()
+        <!-- TAB CONTENT: MIRROR -->
+        <div id="mirror" class="tab-content" role="tabpanel">
+          <h3>Mirror</h3>
+          <p>Mirror examples using <code>NetworkBehaviour</code>; run detection only on <code>isServer</code> and while component is enabled.</p>
+
+          <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+      using Mirror;
+      using UnityEngine;
+
+      public class PlayerVisibilityHandler : NetworkBehaviour
       {
-          // Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
-          if (Runner.IsServer && Runner.IsForward)
+          [SerializeField] private NetworkTransform networkTransform;
+          private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
+
+          public void ToggleComponent(bool state)
           {
-              playerVisibilityDetector.DeltaTime = Runner.DeltaTime;
-              playerVisibilityDetector.UpdateVisibilityFromAlignedNormals();
+              if (networkTransform != null)
+                  networkTransform.enabled = state;
+
+              if (!state)
+                  transform.position = _hiddenPosition;
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <p><em>Notes:</em>  
-        - Replace <code>NetworkTRSP</code> with your networking transform wrapper if needed.  
-        - Keep visibility checks on server (host) only. Use <code>Runner.IsForward</code> to ensure valid forward ticks in Fusion.
-      </p>
-    </div>
+          <pre><code class="language-cs">// PlayerObserver.cs
+      using Mirror;
+      using UnityEngine;
 
-    <!-- TAB CONTENT: MIRROR -->
-    <div id="mirror" class="tab-content" role="tabpanel">
-      <h3>Mirror</h3>
-      <p>Mirror examples using <code>NetworkBehaviour</code>; run detection only on <code>isServer</code> and while component is enabled.</p>
-
-      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-  using Mirror;
-  using UnityEngine;
-
-  public class PlayerVisibilityHandler : NetworkBehaviour
-  {
-      [SerializeField] private NetworkTransform networkTransform;
-      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
-
-      public void ToggleComponent(bool state)
+      public class PlayerObserver : NetworkBehaviour
       {
-          if (networkTransform != null)
-              networkTransform.enabled = state;
+          [SyncVar] public int ObserverId;
 
-          if (!state)
-              transform.position = _hiddenPosition;
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// PlayerObserver.cs
-  using Mirror;
-  using UnityEngine;
-
-  public class PlayerObserver : NetworkBehaviour
-  {
-      [SyncVar] public int ObserverId;
-
-      private void FixedUpdate()
-      {
-          // Mirror: guard by server authority and ensure component active
-          if (isServer && isActiveAndEnabled)
+          private void FixedUpdate()
           {
-              var ping = (float)NetworkTime.rtt * 1000f;
-              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              // Mirror: guard by server authority and ensure component active
+              if (isServer && isActiveAndEnabled)
+              {
+                  var ping = (float)NetworkTime.rtt * 1000f;
+                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
 
-              DetectVisiblePlayersByFOV();
+                  DetectVisiblePlayersByFOV();
+              }
+          }
+
+          private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          {
+              if (observerId != ObserverId || !isServer) return;
+              // Send target RPC to client to toggle their visibility handler
+              RpcVisibilityState(player.netIdentity.connectionToClient, isVisible);
+          }
+
+          [TargetRpc]
+          private void RpcVisibilityState(NetworkConnection target, bool state)
+          {
+              if (target.identity != null &&
+                  target.identity.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+              {
+                  handler.ToggleComponent(state);
+              }
           }
       }
+      </code></pre>
 
-      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
-      {
-          if (observerId != ObserverId || !isServer) return;
-          // Send target RPC to client to toggle their visibility handler
-          RpcVisibilityState(player.netIdentity.connectionToClient, isVisible);
-      }
+          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+      using Mirror;
+      using UnityEngine;
 
-      [TargetRpc]
-      private void RpcVisibilityState(NetworkConnection target, bool state)
+      public class PlayerVisibilityDetector : NetworkBehaviour
       {
-          if (target.identity != null &&
-              target.identity.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+          private void FixedUpdate()
           {
-              handler.ToggleComponent(state);
+              // Mirror: run only on active server
+              if (isServer && isActiveAndEnabled) 
+              {
+                  _deltaTime = Time.deltaTime;
+                  UpdateVisibilityFromAlignedNormals();
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-  using Mirror;
-  using UnityEngine;
+          <p><em>Mirror notes:</em> use <code>isServer</code> plus component enabled checks. Use Mirror RPCs (<code>TargetRpc</code> / <code>ClientRpc</code>) for notifying clients.</p>
+        </div>
 
-  public class PlayerVisibilityDetector : NetworkBehaviour
-  {
-      private void FixedUpdate()
+        <!-- TAB CONTENT: NETCODE FOR GAMEOBJECTS -->
+        <div id="netcode" class="tab-content" role="tabpanel">
+          <h3>Netcode for GameObjects (Unity Netcode)</h3>
+
+          <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+      using Unity.Netcode;
+      using UnityEngine;
+
+      public class PlayerVisibilityHandler : NetworkBehaviour
       {
-          // Mirror: run only on active server
-          if (isServer && isActiveAndEnabled) 
+          [SerializeField] private Unity.Netcode.Components.NetworkTransform networkTransform;
+          private readonly Vector3 _hiddenPosition = new Vector3(0f,0f,0f);
+
+          public void ToggleComponent(bool state)
           {
-              _deltaTime = Time.deltaTime;
-              UpdateVisibilityFromAlignedNormals();
+              if (networkTransform != null)
+                  networkTransform.enabled = state;
+
+              if (!state)
+                  transform.position = _hiddenPosition;
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <p><em>Mirror notes:</em> use <code>isServer</code> plus component enabled checks. Use Mirror RPCs (<code>TargetRpc</code> / <code>ClientRpc</code>) for notifying clients.</p>
-    </div>
+          <pre><code class="language-cs">// PlayerObserver.cs
+      using Unity.Netcode;
+      using UnityEngine;
 
-    <!-- TAB CONTENT: NETCODE FOR GAMEOBJECTS -->
-    <div id="netcode" class="tab-content" role="tabpanel">
-      <h3>Netcode for GameObjects (Unity Netcode)</h3>
-
-      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-  using Unity.Netcode;
-  using UnityEngine;
-
-  public class PlayerVisibilityHandler : NetworkBehaviour
-  {
-      [SerializeField] private Unity.Netcode.Components.NetworkTransform networkTransform;
-      private readonly Vector3 _hiddenPosition = new Vector3(0f,0f,0f);
-
-      public void ToggleComponent(bool state)
+      public class PlayerObserver : NetworkBehaviour
       {
-          if (networkTransform != null)
-              networkTransform.enabled = state;
+          public NetworkVariable&lt;int&gt; ObserverId = new NetworkVariable&lt;int&gt;(0);
 
-          if (!state)
-              transform.position = _hiddenPosition;
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// PlayerObserver.cs
-  using Unity.Netcode;
-  using UnityEngine;
-
-  public class PlayerObserver : NetworkBehaviour
-  {
-      public NetworkVariable&lt;int&gt; ObserverId = new NetworkVariable&lt;int&gt;(0);
-
-      public override void FixedUpdateNetwork()
-      {
-          if (IsServer && IsSpawned)
+          public override void FixedUpdateNetwork()
           {
-              var ping = (float)(NetworkManager.Singleton.NetworkTime.Rtt * 1000f);
-              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              if (IsServer && IsSpawned)
+              {
+                  var ping = (float)(NetworkManager.Singleton.NetworkTime.Rtt * 1000f);
+                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
 
-              DetectVisiblePlayersByFOV();
+                  DetectVisiblePlayersByFOV();
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-  using Unity.Netcode;
-  using UnityEngine;
+          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+      using Unity.Netcode;
+      using UnityEngine;
 
-  public class PlayerVisibilityDetector : NetworkBehaviour
-  {
-      private void FixedUpdate()
+      public class PlayerVisibilityDetector : NetworkBehaviour
       {
-          // Run on server and only for spawned network objects
-          if (IsServer && IsSpawned)
+          private void FixedUpdate()
           {
-              _deltaTime = Time.fixedDeltaTime;
-              UpdateVisibilityFromAlignedNormals();
+              // Run on server and only for spawned network objects
+              if (IsServer && IsSpawned)
+              {
+                  _deltaTime = Time.fixedDeltaTime;
+                  UpdateVisibilityFromAlignedNormals();
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <p><em>Netcode notes:</em> use <code>FixedUpdateNetwork</code> or server-side guards; use <code>ClientRpc</code> for notifications.</p>
-    </div>
+          <p><em>Netcode notes:</em> use <code>FixedUpdateNetwork</code> or server-side guards; use <code>ClientRpc</code> for notifications.</p>
+        </div>
 
-    <!-- TAB CONTENT: PHOTON PUN -->
-    <div id="pun" class="tab-content" role="tabpanel">
-      <h3>Photon PUN</h3>
+        <!-- TAB CONTENT: PHOTON PUN -->
+        <div id="pun" class="tab-content" role="tabpanel">
+          <h3>Photon PUN</h3>
 
-      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-  using Photon.Pun;
-  using UnityEngine;
+          <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+      using Photon.Pun;
+      using UnityEngine;
 
-  public class PlayerVisibilityHandler : MonoBehaviourPun
-  {
-      [SerializeField] private PhotonTransformView photonTransformView;
-      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
-
-      public void ToggleComponent(bool state)
+      public class PlayerVisibilityHandler : MonoBehaviourPun
       {
-          if (photonTransformView != null)
-              photonTransformView.enabled = state;
+          [SerializeField] private PhotonTransformView photonTransformView;
+          private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
 
-          if (!state)
-              transform.position = _hiddenPosition;
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// PlayerObserver.cs
-  using Photon.Pun;
-  using UnityEngine;
-
-  public class PlayerObserver : MonoBehaviourPun
-  {
-      public int ObserverId { get; private set; }
-
-      private void FixedUpdate()
-      {
-          if (PhotonNetwork.IsMasterClient)
+          public void ToggleComponent(bool state)
           {
-              var ping = (float)PhotonNetwork.GetPing();
-              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              if (photonTransformView != null)
+                  photonTransformView.enabled = state;
 
-              DetectVisiblePlayersByFOV();
+              if (!state)
+                  transform.position = _hiddenPosition;
           }
       }
+      </code></pre>
 
-      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          <pre><code class="language-cs">// PlayerObserver.cs
+      using Photon.Pun;
+      using UnityEngine;
+
+      public class PlayerObserver : MonoBehaviourPun
       {
-          if (observerId != ObserverId || !PhotonNetwork.IsMasterClient) return;
+          public int ObserverId { get; private set; }
 
-          photonView.RPC(nameof(RPC_VisibilityState), player.photonView.Owner, isVisible);
-      }
-
-      [PunRPC]
-      private void RPC_VisibilityState(bool state, PhotonMessageInfo info)
-      {
-          var sender = PhotonView.Find(info.Sender.ActorNumber);
-          if (sender != null && sender.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+          private void FixedUpdate()
           {
-              handler.ToggleComponent(state);
+              if (PhotonNetwork.IsMasterClient)
+              {
+                  var ping = (float)PhotonNetwork.GetPing();
+                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+
+                  DetectVisiblePlayersByFOV();
+              }
+          }
+
+          private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          {
+              if (observerId != ObserverId || !PhotonNetwork.IsMasterClient) return;
+
+              photonView.RPC(nameof(RPC_VisibilityState), player.photonView.Owner, isVisible);
+          }
+
+          [PunRPC]
+          private void RPC_VisibilityState(bool state, PhotonMessageInfo info)
+          {
+              var sender = PhotonView.Find(info.Sender.ActorNumber);
+              if (sender != null && sender.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+              {
+                  handler.ToggleComponent(state);
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-  using Photon.Pun;
-  using UnityEngine;
+          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+      using Photon.Pun;
+      using UnityEngine;
 
-  public class PlayerVisibilityDetector : MonoBehaviourPun
-  {
-      private void FixedUpdate()
+      public class PlayerVisibilityDetector : MonoBehaviourPun
       {
-          if (PhotonNetwork.IsMasterClient)
+          private void FixedUpdate()
           {
-              _deltaTime = Time.deltaTime;
-              UpdateVisibilityFromAlignedNormals();
+              if (PhotonNetwork.IsMasterClient)
+              {
+                  _deltaTime = Time.deltaTime;
+                  UpdateVisibilityFromAlignedNormals();
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <p><em>PUN notes:</em> master client acts as server; use <code>photonView.RPC</code> to notify clients.</p>
-    </div>
+          <p><em>PUN notes:</em> master client acts as server; use <code>photonView.RPC</code> to notify clients.</p>
+        </div>
 
-    <!-- TAB CONTENT: FISH-NETWORKING -->
-    <div id="fishnet" class="tab-content" role="tabpanel">
-      <h3>Fish-Networking</h3>
+        <!-- TAB CONTENT: FISH-NETWORKING -->
+        <div id="fishnet" class="tab-content" role="tabpanel">
+          <h3>Fish-Networking</h3>
 
-      <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-  using FishNet.Object;
-  using FishNet.Component.Transforming;
-  using UnityEngine;
+          <pre><code class="language-cs">// PlayerVisibilityHandler.cs
+      using FishNet.Object;
+      using FishNet.Component.Transforming;
+      using UnityEngine;
 
-  public class PlayerVisibilityHandler : NetworkBehaviour
-  {
-      [SerializeField] private TransformSynchronizer transformSync;
-      private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
-
-      public void ToggleComponent(bool state)
+      public class PlayerVisibilityHandler : NetworkBehaviour
       {
-          if (transformSync != null)
-              transformSync.enabled = state;
+          [SerializeField] private TransformSynchronizer transformSync;
+          private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
 
-          if (!state)
-              transform.position = _hiddenPosition;
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// PlayerObserver.cs
-  using FishNet.Object;
-  using UnityEngine;
-
-  public class PlayerObserver : NetworkBehaviour
-  {
-      public int ObserverId;
-
-      public override void FixedUpdateNetwork()
-      {
-          // FishNet host/server tick execution if available
-          if (IsServer)
+          public void ToggleComponent(bool state)
           {
-              var ping = (float)(base.TimeManager.RoundTripTime * 1000f);
-              fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              if (transformSync != null)
+                  transformSync.enabled = state;
 
-              DetectVisiblePlayersByFOV();
+              if (!state)
+                  transform.position = _hiddenPosition;
           }
       }
+      </code></pre>
 
-      private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          <pre><code class="language-cs">// PlayerObserver.cs
+      using FishNet.Object;
+      using UnityEngine;
+
+      public class PlayerObserver : NetworkBehaviour
       {
-          if (observerId != ObserverId || !IsServer) return;
+          public int ObserverId;
 
-          if (player.Owner.IsValid)
-              RpcVisibilityState(player.Owner, isVisible);
-      }
-
-      [TargetRpc]
-      private void RpcVisibilityState(NetworkConnection conn, bool state)
-      {
-          if (conn.FirstObject != null &&
-              conn.FirstObject.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+          public override void FixedUpdateNetwork()
           {
-              handler.ToggleComponent(state);
+              // FishNet host/server tick execution if available
+              if (IsServer)
+              {
+                  var ping = (float)(base.TimeManager.RoundTripTime * 1000f);
+                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+
+                  DetectVisiblePlayersByFOV();
+              }
+          }
+
+          private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          {
+              if (observerId != ObserverId || !IsServer) return;
+
+              if (player.Owner.IsValid)
+                  RpcVisibilityState(player.Owner, isVisible);
+          }
+
+          [TargetRpc]
+          private void RpcVisibilityState(NetworkConnection conn, bool state)
+          {
+              if (conn.FirstObject != null &&
+                  conn.FirstObject.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+              {
+                  handler.ToggleComponent(state);
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-  using FishNet.Object;
-  using UnityEngine;
+          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
+      using FishNet.Object;
+      using UnityEngine;
 
-  public class PlayerVisibilityDetector : NetworkBehaviour
-  {
-      private void FixedUpdate()
+      public class PlayerVisibilityDetector : NetworkBehaviour
       {
-          // Run only on server host ticks
-          if (IsServer)
+          private void FixedUpdate()
           {
-              _deltaTime = Time.deltaTime;
-             UpdateVisibilityFromAlignedNormals();
+              // Run only on server host ticks
+              if (IsServer)
+              {
+                  _deltaTime = Time.deltaTime;
+                UpdateVisibilityFromAlignedNormals();
+              }
           }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <p><em>FishNet notes:</em> adapt RPC/TargetRpc usage according to FishNet API; ensure server-only execution.</p>
-    </div>
+          <p><em>FishNet notes:</em> adapt RPC/TargetRpc usage according to FishNet API; ensure server-only execution.</p>
+        </div>
 
-    <!-- TAB CONTENT: FOOTSTEP SOUND -->
-    <div id="footstep" class="tab-content" role="tabpanel">
-      <h3>Network Footstep Sound (examples per framework)</h3>
-      <p>Examples below show how to trigger footstep sounds across the network when appropriate.</p>
+        <!-- TAB CONTENT: FOOTSTEP SOUND -->
+        <div id="footstep" class="tab-content" role="tabpanel">
+          <h3>Network Footstep Sound (examples per framework)</h3>
+          <p>Examples below show how to trigger footstep sounds across the network when appropriate.</p>
 
-      <pre><code class="language-cs">// NetworkFootStepSound (Photon Fusion)
-  using Fusion;
-  using UnityEngine;
+          <pre><code class="language-cs">// NetworkFootStepSound (Photon Fusion)
+      using Fusion;
+      using UnityEngine;
 
-  public class NetworkFootStepSound : NetworkBehaviour
-  {
-      [SerializeField] private AudioClip[] footStepClips;
-
-      public void PlaySound(int index)
+      public class NetworkFootStepSound : NetworkBehaviour
       {
-          if (Object.HasStateAuthority)
-              RPC_PlaySound(index);
+          [SerializeField] private AudioClip[] footStepClips;
+
+          public void PlaySound(int index)
+          {
+              if (Object.HasStateAuthority)
+                  RPC_PlaySound(index);
+          }
+
+          [Rpc(RpcSources.StateAuthority, RpcTargets.Proxies)]
+          private void RPC_PlaySound(int index)
+          {
+              if (index >= 0 && index < footStepClips.Length)
+                  AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+          }
       }
+      </code></pre>
 
-      [Rpc(RpcSources.StateAuthority, RpcTargets.Proxies)]
-      private void RPC_PlaySound(int index)
+          <pre><code class="language-cs">// NetworkFootStepSound (Mirror)
+      using Mirror;
+      using UnityEngine;
+
+      public class NetworkFootStepSound : NetworkBehaviour
       {
-          if (index >= 0 && index < footStepClips.Length)
-              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
-      }
-  }
-  </code></pre>
+          [SerializeField] private AudioClip[] footStepClips;
 
-      <pre><code class="language-cs">// NetworkFootStepSound (Mirror)
-  using Mirror;
-  using UnityEngine;
-
-  public class NetworkFootStepSound : NetworkBehaviour
-  {
-      [SerializeField] private AudioClip[] footStepClips;
-
-      [Command]
-      public void CmdPlaySound(int index)
-      {
-          RpcPlaySound(index);
-      }
-
-      [ClientRpc(includeOwner = false)]
-      private void RpcPlaySound(int index)
-      {
-          if (index >= 0 && index < footStepClips.Length)
-              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// NetworkFootStepSound (Netcode for GameObjects)
-  using Unity.Netcode;
-  using UnityEngine;
-
-  public class NetworkFootStepSound : NetworkBehaviour
-  {
-      [SerializeField] private AudioClip[] footStepClips;
-
-      public void PlaySound(int index)
-      {
-          if (IsServer)
-              PlaySoundClientRpc(index);
-      }
-
-      [ClientRpc]
-      private void PlaySoundClientRpc(int index)
-      {
-          if (index >= 0 && index < footStepClips.Length)
-              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// NetworkFootStepSound (Photon PUN)
-  using Photon.Pun;
-  using UnityEngine;
-
-  public class NetworkFootStepSound : MonoBehaviourPun
-  {
-      [SerializeField] private AudioClip[] footStepClips;
-
-      public void PlaySound(int index)
-      {
-          if (PhotonNetwork.IsMasterClient)
-              photonView.RPC(nameof(RPC_PlaySound), RpcTarget.Others, index);
-      }
-
-      [PunRPC]
-      private void RPC_PlaySound(int index)
-      {
-          if (index >= 0 && index < footStepClips.Length)
-              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
-      }
-  }
-  </code></pre>
-
-      <pre><code class="language-cs">// NetworkFootStepSound (Fish-Networking)
-  using FishNet.Object;
-  using UnityEngine;
-
-  public class NetworkFootStepSound : NetworkBehaviour
-  {
-      [SerializeField] private AudioClip[] footStepClips;
-
-      public void PlaySound(int index)
-      {
-          if (IsServer)
+          [Command]
+          public void CmdPlaySound(int index)
+          {
               RpcPlaySound(index);
-      }
+          }
 
-      [ObserversRpc(ExcludeOwner = true)]
-      private void RpcPlaySound(int index)
+          [ClientRpc(includeOwner = false)]
+          private void RpcPlaySound(int index)
+          {
+              if (index >= 0 && index < footStepClips.Length)
+                  AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+          }
+      }
+      </code></pre>
+
+          <pre><code class="language-cs">// NetworkFootStepSound (Netcode for GameObjects)
+      using Unity.Netcode;
+      using UnityEngine;
+
+      public class NetworkFootStepSound : NetworkBehaviour
       {
-          if (index >= 0 && index < footStepClips.Length)
-              AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+          [SerializeField] private AudioClip[] footStepClips;
+
+          public void PlaySound(int index)
+          {
+              if (IsServer)
+                  PlaySoundClientRpc(index);
+          }
+
+          [ClientRpc]
+          private void PlaySoundClientRpc(int index)
+          {
+              if (index >= 0 && index < footStepClips.Length)
+                  AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+          }
       }
-  }
-  </code></pre>
+      </code></pre>
 
-      <p><em>Footstep notes:</em> choose the pattern that matches your networking framework; ensure server authority when triggering sound RPCs.</p>
-    </div>
+          <pre><code class="language-cs">// NetworkFootStepSound (Photon PUN)
+      using Photon.Pun;
+      using UnityEngine;
 
-  </section>
+      public class NetworkFootStepSound : MonoBehaviourPun
+      {
+          [SerializeField] private AudioClip[] footStepClips;
 
-  </section>
+          public void PlaySound(int index)
+          {
+              if (PhotonNetwork.IsMasterClient)
+                  photonView.RPC(nameof(RPC_PlaySound), RpcTarget.Others, index);
+          }
+
+          [PunRPC]
+          private void RPC_PlaySound(int index)
+          {
+              if (index >= 0 && index < footStepClips.Length)
+                  AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+          }
+      }
+      </code></pre>
+
+          <pre><code class="language-cs">// NetworkFootStepSound (Fish-Networking)
+      using FishNet.Object;
+      using UnityEngine;
+
+      public class NetworkFootStepSound : NetworkBehaviour
+      {
+          [SerializeField] private AudioClip[] footStepClips;
+
+          public void PlaySound(int index)
+          {
+              if (IsServer)
+                  RpcPlaySound(index);
+          }
+
+          [ObserversRpc(ExcludeOwner = true)]
+          private void RpcPlaySound(int index)
+          {
+              if (index >= 0 && index < footStepClips.Length)
+                  AudioSource.PlayClipAtPoint(footStepClips[index], transform.position);
+          }
+      }
+      </code></pre>
+
+          <p><em>Footstep notes:</em> choose the pattern that matches your networking framework; ensure server authority when triggering sound RPCs.</p>
+        </div>
+      </section>
+    </section>
 
       <!-- Gizmos & Editor Tools -->
       <section id="gizmos" class="card">
         <h2 class="section-title">Gizmos & Editor Tools</h2>
+
         <p>
-          The asset provides editor tools for real-time debugging:
+          The system includes built-in debugging and visualization tools to help you understand, validate, and fine-tune visibility detection in real time directly within the Unity Editor.
         </p>
+
+        <h3>Real-Time Visualization</h3>
+        <p>
+          Gizmos provide immediate visual feedback for how the system evaluates visibility, making it easier to debug complex scenarios such as corner peeking and occlusion.
+        </p>
+
         <ul class="features">
-          <li>Visualize face normals</li>
-          <li>Fixed and dynamic sampling lines</li>
-          <li>Detection cone (green for visible, red for not)</li>
-          <li>Visibility status indicators with distinct colors for fixed/dynamic/detected lines</li>
+          <li><strong>Face normals:</strong> Visual representation of sampled surface directions</li>
+          <li><strong>Sampling lines:</strong> Fixed and dynamic line casts used for detection</li>
+          <li><strong>Detection cone:</strong> Green (visible) and red (not visible) states</li>
+          <li><strong>Status indicators:</strong> Different colors for fixed, dynamic, and validated lines</li>
         </ul>
 
-        <h3>ObserverManagerEditor</h3>
-        <p>Custom inspector shows observer/player lists and visibility status for debugging editor workflows.</p>
+        <h3>Editor Debug Tools</h3>
+        <p>
+          Custom editor inspectors provide detailed runtime information to help track visibility behavior and system state.
+        </p>
+
+        <ul class="features">
+          <li><strong>ObserverManagerEditor:</strong> Displays active observers and registered players</li>
+          <li>Real-time visibility state tracking between players</li>
+          <li>Debug-friendly layout for quick inspection during play mode</li>
+        </ul>
+
+        <h3>Advanced Debugging <span class="pro-badge">PRO</span></h3>
+        <p>
+          The Pro version extends debugging capabilities with more detailed visualization and fine-grained control over gizmos.
+        </p>
+
+        <ul class="features">
+          <li>Expanded gizmo controls (base size, expanded size, clamp lines)</li>
+          <li>Per-player color visualization for easier tracking</li>
+          <li>Line-level debugging with adjustable point visualization</li>
+        </ul>
+
+        <div class="info-box">
+          💡 Gizmos are automatically excluded from builds (<code>#if UNITY_EDITOR</code>), ensuring zero runtime overhead.
+        </div>
       </section>
 
       <!-- Troubleshooting -->
       <section id="troubleshooting" class="card">
         <h2 class="section-title">Troubleshooting</h2>
 
-        <h3>Players not detected — possible causes</h3>
+        <p>
+          This section helps identify and resolve the most common issues when integrating or configuring the system.
+          Most problems are related to incorrect setup, layer configuration, or overly restrictive detection parameters.
+        </p>
+
+        <h3>Players not detected</h3>
         <ul class="features">
-          <li>FOV angle or view distance too low</li>
-          <li>Aspect ratio incorrect</li>
-          <li>Sampling lines blocked by obstaclesMask misconfiguration</li>
-          <li>playerBox not correctly placed as a child GameObject</li>
-          <li>Insufficient dynamicLineSpeed</li>
-          <li>PlayerObserver misaligned with camera</li>
+          <li>Field of View (<code>cameraFOVAngle</code>) or <code>viewDistance</code> too low</li>
+          <li>Incorrect <code>aspectFormat</code>, leading to wrong horizontal FOV</li>
+          <li><code>obstaclesMask</code> blocking detection due to wrong layer configuration</li>
+          <li><code>playerBox</code> or collider improperly positioned or scaled</li>
+          <li>Dynamic sampling too slow (<code>dynamicLineSpeed</code> too low)</li>
+          <li><code>PlayerObserver</code> not aligned with the camera forward direction</li>
         </ul>
 
-        <h3>Events not firing — possible causes</h3>
+        <div class="info-box">
+          💡 Increasing dynamic line count improves detection accuracy, but impacts performance.
+        </div>
+
+        <h3>Detection feels delayed or inconsistent</h3>
         <ul class="features">
-          <li>ObserverManager missing or inactive</li>
-          <li>Registration failed</li>
-          <li>Visibility state not changing due to low dynamicLineSpeed</li>
-          <li>VisibilityUnityEventRelay not configured or missing PlayerVisibilityDetector</li>
-          <li>Observer registration hierarchy invalid</li>
+          <li>Low <code>dynamicLineSpeed</code> causing slow sweep updates</li>
+          <li><code>stateStabilizeTime</code> too high, delaying visibility confirmation</li>
+          <li>Limited call rate (ObserverManager) set too low</li>
+          <li>Velocity or latency compensation misconfigured</li>
         </ul>
+
+        <div class="warning-box">
+          ⚠️ Very low update rates or excessive stabilization can cause noticeable delay when players become visible.
+        </div>
+
+        <h3>Events not firing</h3>
+        <ul class="features">
+          <li><code>ObserverManager</code> missing or not initialized</li>
+          <li>Observers or players not properly registered</li>
+          <li>Visibility state never changes (always visible or always hidden)</li>
+          <li><code>VisibilityUnityEventRelay</code> not configured correctly</li>
+          <li>Incorrect observer-player relationship setup</li>
+        </ul>
+
+        <h3>Unexpected visibility through walls</h3>
+        <ul class="features">
+          <li><code>obstaclesMask</code> missing wall layers</li>
+          <li><code>solidWallMask</code> not configured for solid occlusion</li>
+          <li>Collider wall clamping disabled</li>
+        </ul>
+
+        <div class="info-box">
+          💡 Ensure walls are included in both obstacle and solid wall layers when needed.
+        </div>
 
         <h3>Gizmos not showing</h3>
         <ul class="features">
-          <li>Gizmos disabled</li>
+          <li>Scene Gizmos disabled in Unity</li>
+          <li><code>showGizmos</code> disabled in component</li>
           <li>Scene view not focused</li>
-          <li><code>showGizmos</code> false</li>
         </ul>
 
-        <p><strong>Solutions:</strong> Verify masks, ensure components are active, tune dynamicLineSpeed, and enable Gizmos for debugging.</p>
+        <p>
+          <strong>Tip:</strong> Use Gizmos extensively during setup to validate detection behavior before optimizing performance.
+        </p>
       </section>
 
       <!-- FAQ -->
       <section id="faq" class="card">
-        <h2 class="section-title">FAQ</h2>
+      <h2 class="section-title">FAQ</h2>
 
-        <h3>Does this system work with Photon Fusion or PUN 2?</h3>
-        <p>Yes. Fully compatible. Use server/host logic and sync visibility states across clients. For Fusion prefer FixedUpdateNetwork() integration.</p>
+      <h3>Does this system work with Photon Fusion or PUN 2?</h3>
+      <p>
+        Yes. The system is fully compatible with both Photon Fusion and Photon PUN 2, as well as other networking frameworks.
+        It is designed to run using a <strong>server-authoritative model</strong>, where visibility is calculated on the server (or host)
+        and synchronized to clients.
+      </p>
+      <p>
+        For Photon Fusion, it is recommended to run detection inside <code>FixedUpdateNetwork()</code> using 
+        <code>Runner.IsServer</code> and <code>Runner.IsForward</code> to ensure correct execution during forward ticks.
+      </p>
 
-        <h3>Can I use this for AI agents?</h3>
-        <p>Yes. Observers can represent AI entities and VisibilityUnityEventRelay can trigger AI behaviours.</p>
+      <h3>Can I use this system for AI agents?</h3>
+      <p>
+        Yes. Observers are not limited to players — they can represent AI entities as well.
+        You can use <code>VisibilityUnityEventRelay</code> or custom logic to trigger AI behaviors such as detection,
+        targeting, or state transitions.
+      </p>
 
-        <h3>Is it compatible with URP or HDRP?</h3>
-        <p>Yes. The system is rendering-independent and uses physics and geometry.</p>
+      <h3>Is it compatible with URP or HDRP?</h3>
+      <p>
+        Yes. The system is completely <strong>rendering-independent</strong>. It does not rely on cameras, shaders,
+        or render pipelines — all detection is based on physics, colliders, and geometric calculations.
+      </p>
 
-        <h3>Does it support mobile platforms?</h3>
-        <p>Yes. Reduce dynamicLineSpeed and line counts to optimize performance.</p>
+      <h3>Does it support mobile platforms?</h3>
+      <p>
+        Yes. The system can run on mobile devices, but it is recommended to tune performance settings such as
+        dynamic line count, <code>dynamicLineSpeed</code>, and ObserverManager call rate.
+      </p>
+      <p>
+        Lower sampling density improves performance, while higher values increase detection accuracy.
+      </p>
 
-        <h3>Can I customize the visibility logic?</h3>
-        <p>Yes. The system is modular; override sampling or add filters as needed.</p>
-      </section>
+      <h3>Can I customize the visibility logic?</h3>
+      <p>
+        Yes. The system is modular and extensible. You can customize sampling strategies, override detection behavior,
+        or integrate additional filters depending on your game's needs.
+      </p>
+
+      <h3>Does this system prevent all wallhacks?</h3>
+      <p>
+        The system significantly reduces the possibility of wallhacks by ensuring that players are only visible
+        when they are truly within line of sight, using server-side validation.
+      </p>
+      <p>
+        While no solution is 100% cheat-proof, this approach provides a strong and reliable foundation for secure
+        multiplayer visibility.
+      </p>
+
+    </section>
 
       <footer class="docs-footer">
+      <div class="footer-cta">
+        <p class="cta-text">
+          🔓 Unlock advanced features like latency compensation, cylinder detection and enhanced debugging tools.
+        </p>
+        <a href="#" target="_blank" class="pro-button">
+          Get PRO Version 🚀
+        </a>
+      </div>
+
+      <div class="footer-meta">
         <p>© 2025 Extreme World Studio — Anti-Wallhack Visibility System</p>
         <p>Made with Unity • AI-assisted content disclosed.</p>
-      </footer>
+      </div>
+    </footer>
 
     </main>
   </div>
