@@ -86,7 +86,7 @@
         <h2 class="section-title">Overview</h2>
         <div class="info-box">
           This documentation covers both FREE and PRO versions. 
-          Features marked with <strong>PRO</strong> are only available in the paid version.
+          Features marked with <span class="pro-badge">PRO</span> are only available in the paid version.
         </div>
         <p>
           <strong>Anti-Wallhack Visibility System</strong> is a Unity-based server-side solution designed to prevent wallhacks and unauthorized player detection in competitive or multiplayer games.
@@ -139,14 +139,14 @@ Show Gizmos = true;
         </p>
 
         <div class="info-box">
-         The <code>PlayerVisibilityDetector</code> component is automatically added when you attach <code>NetworkPlayerVisibilityDetector</code>. You do not need to add it manually.
+         💡 The <code>PlayerVisibilityDetector</code> component is automatically added when you attach <code>NetworkPlayerVisibilityDetector</code>. You do not need to add it manually.
         </div>
 
         <p>
           The <code>PlayerVisibilityDetector</code> is responsible for handling visibility checks, including geometry sampling and linecasts.
         </p>
 
-        <h3>Collider Setup</h3>
+        <h3>Collider Setup (Player box, Player cylinder)</h3>
 
         <p>
           A collider is required to define the player’s geometry for visibility detection.
@@ -187,160 +187,441 @@ Show Gizmos = true;
       <section id="components" class="card">
         <h2 class="section-title">Core Components Explained</h2>
 
-        <h3>ObserverManager</h3>
-        <p>
-          Manages registration and unregistration of observers and players, tracks visibility states and dispatches <code>OnVisibilityChanged</code> events. Reuses observer IDs for efficiency. Uses <code>[DefaultExecutionOrder(-200)]</code> to initialize early.
-        </p>
-        <p><strong>Key fields and methods:</strong></p>
-        <ul class="features">
-          <li>Instance (singleton)</li>
-          <li>OnVisibilityChanged (event)</li>
-          <li>RegisterObserver / RegisterPlayer / UnregisterPlayer</li>
-          <li>ChangeVisibility / IsPlayerVisibleToObserver / GetAllPlayersExcept</li>
-        </ul>
+        <!-- Observer Manager-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>ObserverManager</h3>
+            <span class="component-tag">Core</span>
+          </div>
 
-        <p><strong>Call Rate Mode</strong></p>
-        <p>
-          The <code>ObserverManager</code> includes a call rate control system that defines how often visibility checks are executed.
-        </p>
+          <div class="component-body">
+          <p>
+            Manages registration and unregistration of observers and players...
+          </p>
 
-        <ul class="features">
-          <li><strong>Unlimited:</strong> Visibility is updated every frame (maximum accuracy)</li>
-          <li><strong>Limited:</strong> Visibility updates are executed at a fixed rate (better performance)</li>
-        </ul>
+          <h4>Key fields and methods:</h4>
+          <ul class="features">
+            <li>Instance (singleton)</li>
+            <li>OnVisibilityChanged (event)</li>
+            <li>RegisterObserver / RegisterPlayer / UnregisterPlayer</li>
+            <li>ChangeVisibility / IsPlayerVisibleToObserver / GetAllPlayersExcept</li>
+          </ul>
 
-        <p>
-          When using <strong>Limited</strong>, you can configure how many times per second the visibility checks are performed.
-        </p>
+          <h4>Call Rate Mode</h4>
 
-        <div class="info-box">
-          💡 Lower update rates improve performance but may introduce small delays in visibility detection.
+          <p>
+            The <code>ObserverManager</code> includes a call rate control system...
+          </p>
+
+          <ul class="features">
+            <li><strong>Unlimited:</strong> Visibility is updated every frame</li>
+            <li><strong>Limited:</strong> Fixed update rate</li>
+          </ul>
+
+          <p>
+            When using <strong>Limited</strong>, you can configure how many times per second...
+          </p>
+
+          <div class="info-box">
+            💡 Lower update rates improve performance but may introduce delay.
+          </div>
+
+          <div class="warning-box">
+            ⚠️ Very low values can cause noticeable delay.
+          </div>
+
         </div>
 
-        <div class="warning-box">
-          ⚠️ Very low values can cause noticeable delay when players become visible.
         </div>
 
-        <h3>PlayerObserver</h3>
-        
-        <p>
-          The <code>PlayerObserver</code> represents the player's vision in the system. It is responsible for determining which targets are inside the field of view and should be evaluated for visibility.
-        </p>
+        <!-- Player Observer-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>PlayerObserver</h3>
+            <span class="component-tag">Core</span>
+          </div>
+            
+          <div class="component-body">
+            <p>
+              The <code>PlayerObserver</code> represents the player's vision in the system. It is responsible for determining which targets are inside the field of view and should be evaluated for visibility.
+            </p>
 
-        <div class="info-box">
-          💡 This component defines how the player "sees" the world, including FOV, distance, and prediction behavior.
+            <div class="info-box">
+              💡 This component defines how the player "sees" the world, including FOV, distance, and prediction behavior.
+            </div>
+
+            <h4>Camera & FOV Settings</h4>
+
+            <ul class="features">
+              <li><code>cameraFOVAngle</code> — Base vertical field of view</li>
+              <li><code>viewDistance</code> — Maximum detection range</li>
+              <li><code>aspectFormat</code> — Defines horizontal FOV based on screen ratio</li>
+            </ul>
+
+            <h4>FOV Detection Mode</h4>
+            <p>Defines how targets are evaluated inside the field of view:</p>
+
+            <ul class="features">
+              <li><strong>ClosestPoint:</strong> Faster but less precise</li>
+              <li><strong>BoundsCorners:</strong> More accurate, checks bounding box corners</li>
+            </ul>
+
+            <div class="info-box">
+              💡 Use <strong>BoundsCorners</strong> for competitive games where accuracy is critical.
+            </div>
+
+            <h4>FOV Smoothing</h4>
+
+            <ul class="features">
+              <li><code>smoothSpeed</code> — Controls how fast FOV adjustments are applied</li>
+            </ul>
+
+            <h4>Prediction</h4>
+
+            <p>
+              Predicts player movement to compensate for fast motion and reduce visibility delay when peeking.
+            </p>
+
+            <ul class="features">
+              <li><strong>Disabled:</strong> No prediction</li>
+              <li><strong>Velocity:</strong> Offsets observer position based on movement</li>
+              <li><strong>VelocityAndLatency <span class="pro-badge">PRO</span>:</strong> Combines movement with network latency</li>
+            </ul>
+
+            <ul class="features">
+              <li><code>velocityPredictionScale</code> — Controls prediction strength</li>
+            </ul>
+
+            <h4>Compensation FOV <span class="pro-badge">PRO</span></h4>
+            <p>
+              Dynamically expands the field of view to compensate for camera rotation speed and network latency.
+            </p>
+
+            <ul class="features">
+              <li><strong>Disabled:</strong> No compensation</li>
+              <li><strong>Rotation:</strong> Expands FOV based on camera movement</li>
+              <li><strong>RotationAndLatency:</strong> Combines rotation and ping compensation (recommended)</li>
+            </ul>
+
+            <ul class="features">
+              <li><code>minAngularSpeed</code> — Minimum rotation speed to trigger compensation</li>
+              <li><code>maxAngularSpeed</code> — Speed where compensation reaches maximum</li>
+              <li><code>maxRotationFOVExpansion</code> — Max FOV increase from rotation</li>
+              <li><code>maxPingFOVExpansion</code> — Max FOV increase from latency</li>
+            </ul>
+
+            <div class="info-box">
+              💡 This system prevents players from "losing visibility" when turning quickly or playing with high ping.
+            </div>
+
+            <h4>Prediction <span class="pro-badge">PRO</span></h4>
+
+            <p>
+              Provides fine control over how prediction behaves under different movement and latency conditions.
+            </p>
+
+            <ul class="features">
+              <li><code>PredictionAxisMode</code> — Choose between lateral, frontal, or combined prediction</li>
+              <li><code>lateralWeight</code> / <code>frontalWeight</code> — Control directional influence</li>
+              <li><code>maxPredictionDistance</code> — Limits how far prediction can offset the observer</li>
+              <li><code>latencyExpansionMultiplier</code> — Controls how latency affects prediction strength</li>
+            </ul>
+
+            <h4>Grace Prediction <span class="pro-badge">PRO</span></h4>
+
+            <ul class="features">
+              <li><code>useGracePrediction</code> — Smooths visibility when recently visible</li>
+              <li><code>gracePingStart</code> / <code>gracePingMax</code> — Defines activation range</li>
+              <li><code>minGraceScale</code> — Limits prediction intensity</li>
+            </ul>
+
+            <div class="warning-box">
+              ⚠️ Excessive prediction values may cause players to be detected earlier than intended.
+            </div>
+
+            <h4>Gizmos</h4>
+
+            <ul class="features">
+              <li><code>showGizmos</code> — Enables visualization in Scene view</li>
+            </ul>
+          </div>
         </div>
 
-        <p><strong>Camera & FOV Settings</strong></p>
+        <!-- Player Visibility Detector-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>PlayerVisibilityDetector</h3>
+            <span class="component-tag">Core</span>
+          </div>
 
-        <ul class="features">
-          <li><code>cameraFOVAngle</code> — Base vertical field of view</li>
-          <li><code>viewDistance</code> — Maximum detection range</li>
-          <li><code>aspectFormat</code> — Defines horizontal FOV based on screen ratio</li>
-        </ul>
+          <div class="component-body">
 
-        <p><strong>FOV Detection Mode</strong></p>
-        <p>Defines how targets are evaluated inside the field of view:</p>
+            <p>
+              Responsible for performing visibility validation using line sampling, collider geometry, and physics-based checks.
+              This component works together with <code>PlayerObserver</code> and is automatically added when using 
+              <code>NetworkPlayerVisibilityDetector</code>.
+            </p>
 
-        <ul class="features">
-          <li><strong>ClosestPoint:</strong> Faster but less precise</li>
-          <li><strong>BoundsCorners:</strong> More accurate, checks bounding box corners</li>
-        </ul>
+            <div class="info-box">
+              💡 This component is automatically added when using <code>NetworkPlayerVisibilityDetector</code>.
+            </div>
 
-        <div class="info-box">
-          💡 Use <strong>BoundsCorners</strong> for competitive games where accuracy is critical.
+            <!-- COLLIDER -->
+            <h4>Collider Settings</h4>
+            <ul class="features">
+              <li><strong>Free:</strong> Uses <code>PlayerBox</code> (box-based detection)</li>
+              <li><strong>Pro:</strong> Supports <code>PlayerCylinder</code> for more realistic player shape</li>
+              <li>Collider can be placed on root or child GameObject</li>
+            </ul>
+
+            <div class="pro-box">
+            <strong>Pro Feature:</strong> Cylinder-based detection improves accuracy for rounded player shapes
+            </div>
+
+            <!-- LINES -->
+            <h4>Line Sampling</h4>
+            <ul class="features">
+              <li>Fixed Lines → constant visibility checks</li>
+              <li>Dynamic Lines → sweeping lines for better precision</li>
+              <li>Adjustable density and speed</li>
+            </ul>
+
+            <pre><code class="language-cs">
+        // Key parameters
+        verticalFixedLineCount
+        horizontalFixedLineCount
+        dynamicLineSpacing
+        dynamicLineSpeed
+            </code></pre>
+
+            <!-- GRID -->
+            <h4>Grid Subdivision</h4>
+            <p>
+              Defines how the collider is subdivided for sampling.
+            </p>
+            <ul class="features">
+              <li>Vertical lines (rows)</li>
+              <li>Horizontal columns</li>
+            </ul>
+
+            <!-- ALIGNMENT -->
+            <h4>Alignment Filtering</h4>
+            <ul class="features">
+              <li><code>alignmentThreshold</code> → minimum valid angle</li>
+              <li><code>targetAlignmentThreshold</code> → refined validation</li>
+            </ul>
+
+            <!-- COMPENSATION -->
+            <h4>Size Compensation</h4>
+
+            <ul class="features">
+              <li><strong>Free:</strong> Velocity-based expansion</li>
+              <li><strong>Pro:</strong> Velocity + Animation + Latency</li>
+            </ul>
+
+            <div class="pro-box">
+              <strong>Pro Feature:</strong> Latency and animation compensation improves fairness in high-ping scenarios
+            </div>
+
+            <!-- PRO EXTRA -->
+            <h4>Advanced <span class="pro-badge">PRO</span></h4>
+            <ul class="features">
+              <li>Cylinder angular sweep control</li>
+              <li>Latency-based expansion scaling</li>
+              <li>Animation-based collider adjustment</li>
+              <li>Double wall optimization check</li>
+            </ul>
+
+            <!-- PERFORMANCE -->
+            <h4>Performance & Stability</h4>
+            <ul class="features">
+              <li><code>stateStabilizeTime</code> prevents flickering</li>
+              <li>Layer masks control raycast cost</li>
+              <li>Smoothing reduces abrupt changes</li>
+            </ul>
+
+            <div class="warning-box">
+              ⚠️ High line counts and dynamic speed can impact performance if not tuned properly
+            </div>
+
+          </div>
+
         </div>
 
-        <p><strong>FOV Smoothing</strong></p>
+        <!-- Player Box Free-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>PlayerBox</h3>
+            <span class="component-tag">Core</span>
+          </div>
 
-        <ul class="features">
-          <li><code>smoothSpeed</code> — Controls how fast FOV adjustments are applied</li>
-        </ul>
+          <div class="component-body">
+            <p>
+              Defines the bounding box used for player visibility detection.
+              It is responsible for providing the geometric base used by line sampling and alignment checks.
+            </p>
 
-        <p><strong>Velocity Prediction</strong></p>
+            <h4>Core Settings</h4>
+            <ul class="features">
+              <li><code>skinWidth</code> → Adds a small margin to avoid precision issues</li>
+              <li><code>boxExpansionAxisAdjustment</code> → Controls how expansion applies per axis</li>
+              <li><code>enableColliderWallClamping</code> → Prevents detection through walls</li>
+            </ul>
 
-        <p>
-          Predicts player movement to compensate for fast motion and reduce visibility delay when peeking.
-        </p>
+            <div class="warning-box">
+              ⚠️ Disabling wall clamping may cause false positives and is not recommended.
+            </div>
 
-        <ul class="features">
-          <li><strong>Disabled:</strong> No prediction</li>
-          <li><strong>Velocity:</strong> Offsets observer position based on movement</li>
-          <li><strong>VelocityAndLatency <span class="pro-badge">PRO</span>:</strong> Combines movement with network latency</li>
-        </ul>
+            <h4>Gizmos (Basic)</h4>
+            <ul class="features">
+              <li>Toggle visualization</li>
+              <li>Basic collider color display</li>
+            </ul>
 
-        <ul class="features">
-          <li><code>velocityPredictionScale</code> — Controls prediction strength</li>
-        </ul>
+          </div>
 
-        <p><strong>FOV Compensation <span class="pro-badge">PRO</span></strong></p>
-
-        <p>
-          Dynamically expands the field of view to compensate for camera rotation speed and network latency.
-        </p>
-
-        <ul class="features">
-          <li><strong>Disabled:</strong> No compensation</li>
-          <li><strong>Rotation:</strong> Expands FOV based on camera movement</li>
-          <li><strong>RotationAndLatency:</strong> Combines rotation and ping compensation (recommended)</li>
-        </ul>
-
-        <ul class="features">
-          <li><code>minAngularSpeed</code> — Minimum rotation speed to trigger compensation</li>
-          <li><code>maxAngularSpeed</code> — Speed where compensation reaches maximum</li>
-          <li><code>maxRotationFOVExpansion</code> — Max FOV increase from rotation</li>
-          <li><code>maxPingFOVExpansion</code> — Max FOV increase from latency</li>
-        </ul>
-
-        <div class="info-box">
-          💡 This system prevents players from "losing visibility" when turning quickly or playing with high ping.
         </div>
 
-        <p><strong>Advanced Prediction <span class="pro-badge">PRO</span></strong></p>
+        <!-- Player Box Pro-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>PlayerBox <span class="pro-badge">PRO</span></h3>
+            <span class="component-tag">PRO</span>
+          </div>
 
-        <p>
-          Provides fine control over how prediction behaves under different movement and latency conditions.
-        </p>
+          <div class="component-body">
+            <p>
+              The Pro version extends PlayerBox with advanced debugging, visualization tools, and an enhanced wall clamping system,
+              allowing detailed inspection of visibility behavior in real time while improving collision accuracy and reliability.
+            </p>
 
-        <ul class="features">
-          <li><code>PredictionAxisMode</code> — Choose between lateral, frontal, or combined prediction</li>
-          <li><code>lateralWeight</code> / <code>frontalWeight</code> — Control directional influence</li>
-          <li><code>maxPredictionDistance</code> — Limits how far prediction can offset the observer</li>
-          <li><code>latencyExpansionMultiplier</code> — Controls how latency affects prediction strength</li>
-        </ul>
+            <h4>Advanced Wall Clamping</h4>
+            <ul class="features">
+              <li>Improved collision detection around complex geometry</li>
+              <li>More accurate handling of corners and thin walls</li>
+              <li>Better stability in fast-paced scenarios</li>
+            </ul>
 
-        <p><strong>Grace Prediction <span class="pro-badge">PRO</span></strong></p>
+            <div class="pro-box">
+              🚀 The Pro version includes an enhanced wall clamping system that performs more precise collision validation,
+              reducing false positives and improving reliability in competitive environments.
+            </div>
 
-        <ul class="features">
-          <li><code>useGracePrediction</code> — Smooths visibility when recently visible</li>
-          <li><code>gracePingStart</code> / <code>gracePingMax</code> — Defines activation range</li>
-          <li><code>minGraceScale</code> — Limits prediction intensity</li>
-        </ul>
+            <h4>Advanced Gizmos</h4>
+            <ul class="features">
+              <li>Per-player color visualization</li>
+              <li>Base vs Expanded collider comparison</li>
+              <li>Line clamp visualization</li>
+              <li>Debug line points rendering</li>
+            </ul>
 
-        <div class="warning-box">
-          ⚠️ Excessive prediction values may cause players to be detected earlier than intended.
+            <pre><code class="language-cs">
+        // Examples
+        showBaseSize
+        showExpandedSize
+        showLineClamp
+        linePointRadius
+            </code></pre>
+
+            <div class="pro-box">
+              🚀 Helps debugging complex scenarios like latency compensation and occlusion issues
+            </div>
+
+          </div>
         </div>
 
-        <p><strong>Debug Gizmos</strong></p>
+        <!-- Player Cylinder-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>PlayerCylinder <span class="pro-badge">PRO</span></h3>
+            <span class="component-tag">PRO</span>
+          </div>
 
-        <ul class="features">
-          <li><code>showGizmos</code> — Enables visualization in Scene view</li>
-        </ul>
+          <div class="component-body">
+            <p>
+              The <code>PlayerCylinder</code> provides a more accurate geometric representation of the player using a cylindrical shape.
+              This improves visibility detection in scenarios where box-based colliders are not precise enough, especially around corners and curved movement paths.
+            </p>
 
-        <h3>PlayerVisibilityDetector</h3>
-        <p>
-          Calculates face normals, performs linecasts (fixed and dynamic lines), tracks visibility per observer, and notifies <code>ObserverManager</code>.
-        </p>
+            <div class="pro-box">
+              🚀 Designed for competitive multiplayer environments where precision and fairness are critical.
+            </div>
 
-        <h3>VisibilityUnityEventRelay</h3>
-        <p>
-          Relays visibility events to a UnityEvent for easy editor configuration. Requires <code>PlayerVisibilityDetector</code> on the same GameObject.
-        </p>
+            <!-- GEOMETRY -->
+            <h4>Geometry Settings</h4>
+            <ul class="features">
+              <li><code>radius</code> → Defines player width</li>
+              <li><code>height</code> → Defines player height</li>
+              <li><code>center</code> → Adjusts collider offset</li>
+            </ul>
 
-        <h3>ObserverManagerEditor</h3>
-        <p>
-          Custom inspector for debugging (editor-only, no runtime impact). Shows lists and provides debug controls.
-        </p>
+            <!-- EXPANSION -->
+            <h4>Expansion & Compensation</h4>
+            <ul class="features">
+              <li><code>expansionFactor</code> → Global size multiplier for safety margin</li>
+              <li><code>expansionAxis</code> → Controls which axes are expanded (X, Y, Z or all)</li>
+              <li><code>cylinderExpansionAxisAdjustment</code> → Fine-tunes radius and height expansion</li>
+              <li><code>SkinWidth</code> → Prevents precision issues in collision checks</li>
+            </ul>
+
+            <div class="info-box">
+              💡 Expansion helps compensate for fast movement, latency, and edge cases where players are partially visible.
+            </div>
+
+            <!-- WALL CLAMP -->
+            <h4>Advanced Wall Clamping</h4>
+            <ul class="features">
+              <li>Rotating scan system around the cylinder</li>
+              <li>Continuous obstacle detection</li>
+              <li>Handles thin walls and corner exposure</li>
+            </ul>
+
+            <ul class="features">
+              <li><code>speedLineClamp</code> → Rotation speed of the scan</li>
+              <li><code>raysClampPerFrame</code> → Number of rays processed per frame</li>
+              <li><code>enableColliderWallClamping</code> → Enables collision safety system</li>
+            </ul>
+
+            <div class="pro-box">
+              🚀 This advanced clamping system significantly reduces false positives when players are partially hidden behind walls.
+            </div>
+
+            <div class="warning-box">
+              ⚠️ High scan speeds and ray counts can impact performance if not balanced correctly.
+            </div>
+
+            <!-- PERFORMANCE -->
+            <h4>Performance Considerations</h4>
+            <ul class="features">
+              <li>Adjust scan speed for performance vs accuracy</li>
+              <li>Reduce rays per frame on large-scale matches</li>
+              <li>Use only when high precision is required</li>
+            </ul>
+
+            <!-- GIZMOS -->
+            <h4>Gizmos</h4>
+            <ul class="features">
+              <li>Real-time cylinder visualization</li>
+              <li>Expansion preview</li>
+              <li>Line clamp debug rendering</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- VisibilityUnityEventRelay-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>VisibilityUnityEventRelay</h3>
+            <span class="component-tag">Core</span>
+          </div>
+
+          <div class="component-body">
+            <p>
+              Relays visibility events to a UnityEvent for easy editor configuration. Requires <code>PlayerVisibilityDetector</code> on the same GameObject.
+            </p>
+          </div>
+        </div>
+
       </section>
 
       <!-- How It Works -->
@@ -373,7 +654,7 @@ Show Gizmos = true;
           For deterministic multiplayer frameworks (e.g., Photon Fusion), call visibility logic in fixed-tick network methods (e.g., <code>FixedUpdateNetwork()</code>) — avoid Render() or Update() for linecast-based checks.
         </p>
         <div class="info-box">
-       Expected behavior: A player is considered visible when at least one linecast successfully reaches the target without hitting obstacles.
+       💡 Expected behavior: A player is considered visible when at least one linecast successfully reaches the target without hitting obstacles.
     </div>
       </section>
 
