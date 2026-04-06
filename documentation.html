@@ -785,6 +785,20 @@ Show Gizmos = true;
           <li><strong>Fish-Networking:</strong> Advanced and highly performant</li>
         </ul>
 
+        <div class="pro-cta">
+        <p>
+          🔓 <strong>PRO Version:</strong> Full automatic integration with supported networking frameworks.
+          No manual code required — simply attach the adapter and driver components.
+        </p>
+        <p>
+          Supports Photon Fusion, Mirror, Netcode, PUN and FishNet out of the box.
+        </p>
+
+        <!--<a href="#" target="_blank" class="pro-button">Get PRO Version 🚀</a>-->
+        <a class="pro-button disabled">PRO Coming Soon 🚀</a>
+        
+      </div>
+
         <div class="warning-box">
           ⚠️ Visibility calculations should always run on the server to prevent exploits and ensure fair gameplay.
         </div>
@@ -808,14 +822,14 @@ Show Gizmos = true;
           <p>Full classes adapted for Fusion. <strong>Note:</strong> use <code>Runner.IsForward</code> + <code>Runner.IsServer</code> to run logic only on valid server forward ticks.</p>
 
           <pre><code class="language-cs">// NetworkPlayerVisibilityHandler.cs
-      using Fusion;
-      using UnityEngine;
+          using Fusion;
+          using UnityEngine;
 
-      public class NetworkPlayerVisibilityHandler : MonoBehaviour
-      {
-          [SerializeField] private NetworkTRSP networkTransform; // or your network transform wrapper
-      }
-      </code></pre>
+          public class NetworkPlayerVisibilityHandler : MonoBehaviour
+          {
+              [SerializeField] private NetworkTRSP networkTransform; // or your network transform wrapper
+          }
+          </code></pre>
 
       <pre><code class="language-cs">// NetworkPlayerObserver.cs
       using Fusion;
@@ -823,18 +837,35 @@ Show Gizmos = true;
 
       public class NetworkPlayerObserver : NetworkBehaviour
       {
-          // FixedUpdateNetwork runs on Fusion's network ticks
+          public override void Spawned()
+          {
+              if (!playerObserver)
+                  playerObserver = GetComponent&lt;PlayerObserver&gt;();
+
+              playerObserver.InitializeSystem();
+          }
+
           public override void FixedUpdateNetwork()
           {
               // If server, perform detection. Runner.IsForward ensures execution only on forward tick (no rollback execution)
-              if (Runner.IsServer && Runner.IsForward)
-              {
-                  PingMS = (float) Runner.GetPlayerRtt(Object.InputAuthority) * 1000f;
-                  CameraDirection = transform.forward;
+              if (!Runner.IsServer || !Runner.IsForward)
+                  return;
 
-                  playerObserver.CalculateDynamicFOV(CameraDirection, PingMS);
-                  playerObserver.DetectVisiblePlayersByFOV();
+              if (GetInput&lt;MouseInput&gt;(out var input))
+              {
+                  var direction = input.CamDirection;
+                  if (direction != Vector3.zero)
+                  {
+                      CameraDirection = direction;
+                      transform.forward = direction;
+                  }
+                  //transform.position = input.CamPositon;
               }
+
+              PingMS = (float)Runner.GetPlayerRtt(Object.InputAuthority) * 1000f;
+
+              var time = Runner.SimulationTime;
+              playerObserver.ServerTick(CameraDirection, PingMS, time);
           }
 
           private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
@@ -842,8 +873,10 @@ Show Gizmos = true;
               // If visibility change affects this observer, send RPC to player owner
               if (observerId != playerObserver.ObserverId || !Runner.IsServer) return;
 
-              playerObserver.IsVisible = isVisible;
-              RPC_VisibilityState(player.Object.InputAuthority, isVisible);
+              var playerObject = player.GetComponent&lt;NetworkPlayerVisibilityDetector&gt;();
+
+              RPC_VisibilityState(playerObject.Object.InputAuthority, isVisible);
+              playerObject.Object.SetPlayerAlwaysInterested(Object.InputAuthority, isVisible);
           }
 
           [Rpc(RpcSources.StateAuthority, RpcTargets.InputAuthority)]
@@ -860,20 +893,28 @@ Show Gizmos = true;
       }
       </code></pre>
 
-          <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs
+      <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs
       using Fusion;
       using UnityEngine;
 
       public class NetworkPlayerVisibilityDetector : NetworkBehaviour
       {
+          public override void Spawned()        
+          {
+              if (!playerVisibilityDetector)
+                  playerVisibilityDetector = GetComponent&lt;PlayerVisibilityDetector&gt;();
+
+              playerVisibilityDetector.InitializeSystem();
+          }
+
           public override void FixedUpdateNetwork()
           {
               // Corrected: only execute on server AND on forward ticks to avoid execution during rollbacks
-              if (Runner.IsServer && Runner.IsForward)
-              {
-                  playerVisibilityDetector.DeltaTime = Runner.DeltaTime;
-                  playerVisibilityDetector.UpdateVisibilityFromAlignedNormals();
-              }
+              if (!Runner.IsServer || !Runner.IsForward)
+                  return;
+
+              var time = Runner.SimulationTime;
+              playerVisibilityDetector.ServerTick(time);
           }
       }
       </code></pre>
@@ -890,81 +931,101 @@ Show Gizmos = true;
           <p>Mirror examples using <code>NetworkBehaviour</code>; run detection only on <code>isServer</code> and while component is enabled.</p>
 
           <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-      using Mirror;
-      using UnityEngine;
+          using Mirror;
+          using UnityEngine;
 
-      public class PlayerVisibilityHandler : NetworkBehaviour
-      {
-          [SerializeField] private NetworkTransform networkTransform;
-          private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
-
-          public void ToggleComponent(bool state)
+          public class PlayerVisibilityHandler : NetworkBehaviour
           {
-              if (networkTransform != null)
-                  networkTransform.enabled = state;
+              [SerializeField] private NetworkTransform networkTransform;
+              private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
 
-              if (!state)
-                  transform.position = _hiddenPosition;
-          }
-      }
-      </code></pre>
-
-          <pre><code class="language-cs">// PlayerObserver.cs
-      using Mirror;
-      using UnityEngine;
-
-      public class PlayerObserver : NetworkBehaviour
-      {
-          [SyncVar] public int ObserverId;
-
-          private void FixedUpdate()
-          {
-              // Mirror: guard by server authority and ensure component active
-              if (isServer && isActiveAndEnabled)
+              public void ToggleComponent(bool state)
               {
-                  var ping = (float)NetworkTime.rtt * 1000f;
-                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+                  if (networkTransform != null)
+                      networkTransform.enabled = state;
 
-                  DetectVisiblePlayersByFOV();
+                  if (!state)
+                      transform.position = _hiddenPosition;
               }
           }
+          </code></pre>
 
-          private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
-          {
-              if (observerId != ObserverId || !isServer) return;
-              // Send target RPC to client to toggle their visibility handler
-              RpcVisibilityState(player.netIdentity.connectionToClient, isVisible);
-          }
+          <pre><code class="language-cs">// NetworkPlayerObserver.cs (Mirror)
+          using Mirror;
+          using UnityEngine;
 
-          [TargetRpc]
-          private void RpcVisibilityState(NetworkConnection target, bool state)
+          public class NetworkPlayerObserver : NetworkBehaviour
           {
-              if (target.identity != null &&
-                  target.identity.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+              private PlayerObserver playerObserver;
+
+              public override void OnStartServer()
               {
-                  handler.ToggleComponent(state);
+                  if (!playerObserver)
+                      playerObserver = GetComponent&lt;PlayerObserver&gt;();
+
+                  playerObserver.InitializeSystem();
+              }
+
+              private void FixedUpdate()
+              {
+                  if (!isServer || !isActiveAndEnabled)
+                      return;
+
+                  float ping = (float)NetworkTime.rtt * 1000f;
+                  float time = (float)NetworkTime.time;
+
+                  Vector3 cameraDirection = transform.forward;
+
+                  playerObserver.ServerTick(cameraDirection, ping, time);
+              }
+
+              private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+              {
+                  if (observerId != playerObserver.ObserverId || !isServer)
+                      return;
+
+                  TargetVisibility(player.connectionToClient, isVisible);
+              }
+
+              [TargetRpc]
+              private void TargetVisibility(NetworkConnection target, bool state)
+              {
+                  if (target.identity != null &&
+                      target.identity.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+                  {
+                      handler.ToggleComponent(state);
+                  }
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
-          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-      using Mirror;
-      using UnityEngine;
+          <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs (Mirror)
+          using Mirror;
+          using UnityEngine;
 
-      public class PlayerVisibilityDetector : NetworkBehaviour
-      {
-          private void FixedUpdate()
+          public class NetworkPlayerVisibilityDetector : NetworkBehaviour
           {
-              // Mirror: run only on active server
-              if (isServer && isActiveAndEnabled) 
+              private PlayerVisibilityDetector playerVisibilityDetector;
+
+              public override void OnStartServer()
               {
-                  _deltaTime = Time.deltaTime;
-                  UpdateVisibilityFromAlignedNormals();
+                  if (!playerVisibilityDetector)
+                      playerVisibilityDetector = GetComponent&lt;PlayerVisibilityDetector&gt;();
+
+                  playerVisibilityDetector.InitializeSystem();
+              }
+
+              private void FixedUpdate()
+              {
+                  if (!isServer || !isActiveAndEnabled)
+                      return;
+
+                  float time = (float)NetworkTime.time;
+
+                  playerVisibilityDetector.ServerTick(time);
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
           <p><em>Mirror notes:</em> use <code>isServer</code> plus component enabled checks. Use Mirror RPCs (<code>TargetRpc</code> / <code>ClientRpc</code>) for notifying clients.</p>
         </div>
@@ -993,44 +1054,68 @@ Show Gizmos = true;
       }
       </code></pre>
 
-          <pre><code class="language-cs">// PlayerObserver.cs
-      using Unity.Netcode;
-      using UnityEngine;
+        <pre><code class="language-cs">// NetworkPlayerObserver.cs (Netcode)
+          using Unity.Netcode;
+          using UnityEngine;
 
-      public class PlayerObserver : NetworkBehaviour
-      {
-          public NetworkVariable&lt;int&gt; ObserverId = new NetworkVariable&lt;int&gt;(0);
-
-          public override void FixedUpdateNetwork()
+          public class NetworkPlayerObserver : NetworkBehaviour
           {
-              if (IsServer && IsSpawned)
-              {
-                  var ping = (float)(NetworkManager.Singleton.NetworkTime.Rtt * 1000f);
-                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              private PlayerObserver playerObserver;
 
-                  DetectVisiblePlayersByFOV();
+              public override void OnNetworkSpawn()
+              {
+                  if (!IsServer) return;
+
+                  if (!playerObserver)
+                      playerObserver = GetComponent&lt;PlayerObserver&gt;();
+
+                  playerObserver.InitializeSystem();
+              }
+
+              private void FixedUpdate()
+              {
+                  if (!IsServer || !IsSpawned)
+                      return;
+
+                  float ping = (float)(NetworkManager.Singleton.NetworkTime.Rtt * 1000f);
+                  float time = (float)NetworkManager.Singleton.NetworkTime.Time;
+
+                  Vector3 cameraDirection = transform.forward;
+
+                  playerObserver.ServerTick(cameraDirection, ping, time);
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
-          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-      using Unity.Netcode;
-      using UnityEngine;
+          <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs (Netcode)
+          using Unity.Netcode;
+          using UnityEngine;
 
-      public class PlayerVisibilityDetector : NetworkBehaviour
-      {
-          private void FixedUpdate()
+          public class NetworkPlayerVisibilityDetector : NetworkBehaviour
           {
-              // Run on server and only for spawned network objects
-              if (IsServer && IsSpawned)
+              private PlayerVisibilityDetector playerVisibilityDetector;
+
+              public override void OnNetworkSpawn()
               {
-                  _deltaTime = Time.fixedDeltaTime;
-                  UpdateVisibilityFromAlignedNormals();
+                  if (!IsServer) return;
+
+                  if (!playerVisibilityDetector)
+                      playerVisibilityDetector = GetComponent&lt;PlayerVisibilityDetector&gt;();
+
+                  playerVisibilityDetector.InitializeSystem();
+              }
+
+              private void FixedUpdate()
+              {
+                  if (!IsServer || !IsSpawned)
+                      return;
+
+                  float time = (float)NetworkManager.Singleton.NetworkTime.Time;
+
+                  playerVisibilityDetector.ServerTick(time);
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
           <p><em>Netcode notes:</em> use <code>FixedUpdateNetwork</code> or server-side guards; use <code>ClientRpc</code> for notifications.</p>
         </div>
@@ -1040,79 +1125,89 @@ Show Gizmos = true;
           <h3>Photon PUN</h3>
 
           <pre><code class="language-cs">// PlayerVisibilityHandler.cs
-      using Photon.Pun;
-      using UnityEngine;
+          using Photon.Pun;
+          using UnityEngine;
 
-      public class PlayerVisibilityHandler : MonoBehaviourPun
-      {
-          [SerializeField] private PhotonTransformView photonTransformView;
-          private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
-
-          public void ToggleComponent(bool state)
+          public class PlayerVisibilityHandler : MonoBehaviourPun
           {
-              if (photonTransformView != null)
-                  photonTransformView.enabled = state;
+              [SerializeField] private PhotonTransformView photonTransformView;
+              private readonly Vector3 _hiddenPosition = new Vector3(0f, 0f, 0f);
 
-              if (!state)
-                  transform.position = _hiddenPosition;
-          }
-      }
-      </code></pre>
-
-          <pre><code class="language-cs">// PlayerObserver.cs
-      using Photon.Pun;
-      using UnityEngine;
-
-      public class PlayerObserver : MonoBehaviourPun
-      {
-          public int ObserverId { get; private set; }
-
-          private void FixedUpdate()
-          {
-              if (PhotonNetwork.IsMasterClient)
+              public void ToggleComponent(bool state)
               {
-                  var ping = (float)PhotonNetwork.GetPing();
-                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+                  if (photonTransformView != null)
+                      photonTransformView.enabled = state;
 
-                  DetectVisiblePlayersByFOV();
+                  if (!state)
+                      transform.position = _hiddenPosition;
               }
           }
+          </code></pre>
 
-          private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
+          <pre><code class="language-cs">// NetworkPlayerObserver.cs (PUN)
+          using Photon.Pun;
+          using UnityEngine;
+
+          public class NetworkPlayerObserver : MonoBehaviourPun
           {
-              if (observerId != ObserverId || !PhotonNetwork.IsMasterClient) return;
+              private PlayerObserver playerObserver;
 
-              photonView.RPC(nameof(RPC_VisibilityState), player.photonView.Owner, isVisible);
-          }
-
-          [PunRPC]
-          private void RPC_VisibilityState(bool state, PhotonMessageInfo info)
-          {
-              var sender = PhotonView.Find(info.Sender.ActorNumber);
-              if (sender != null && sender.TryGetComponent&lt;PlayerVisibilityHandler&gt;(out var handler))
+              private void Start()
               {
-                  handler.ToggleComponent(state);
+                  if (!PhotonNetwork.IsMasterClient)
+                      return;
+
+                  if (!playerObserver)
+                      playerObserver = GetComponent&lt;PlayerObserver&gt;();
+
+                  playerObserver.InitializeSystem();
+              }
+
+              private void FixedUpdate()
+              {
+                  if (!PhotonNetwork.IsMasterClient)
+                      return;
+
+                  float ping = (float)PhotonNetwork.GetPing();
+                  float time = Time.time;
+
+                  Vector3 cameraDirection = transform.forward;
+
+                  playerObserver.ServerTick(cameraDirection, ping, time);
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
-          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-      using Photon.Pun;
-      using UnityEngine;
+          <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs (PUN)
+          using Photon.Pun;
+          using UnityEngine;
 
-      public class PlayerVisibilityDetector : MonoBehaviourPun
-      {
-          private void FixedUpdate()
+          public class NetworkPlayerVisibilityDetector : MonoBehaviourPun
           {
-              if (PhotonNetwork.IsMasterClient)
+              private PlayerVisibilityDetector playerVisibilityDetector;
+
+              private void Start()
               {
-                  _deltaTime = Time.deltaTime;
-                  UpdateVisibilityFromAlignedNormals();
+                  if (!PhotonNetwork.IsMasterClient)
+                      return;
+
+                  if (!playerVisibilityDetector)
+                      playerVisibilityDetector = GetComponent&lt;PlayerVisibilityDetector&gt;();
+
+                  playerVisibilityDetector.InitializeSystem();
+              }
+
+              private void FixedUpdate()
+              {
+                  if (!PhotonNetwork.IsMasterClient)
+                      return;
+
+                  float time = Time.time;
+
+                  playerVisibilityDetector.ServerTick(time);
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
           <p><em>PUN notes:</em> master client acts as server; use <code>photonView.RPC</code> to notify clients.</p>
         </div>
@@ -1142,24 +1237,33 @@ Show Gizmos = true;
       }
       </code></pre>
 
-          <pre><code class="language-cs">// PlayerObserver.cs
+        <pre><code class="language-cs">// NetworkPlayerObserver.cs (FishNet)
       using FishNet.Object;
       using UnityEngine;
 
-      public class PlayerObserver : NetworkBehaviour
+      public class NetworkPlayerObserver : NetworkBehaviour
       {
-          public int ObserverId;
+          private PlayerObserver playerObserver;
+
+          public override void OnStartServer()
+          {
+              if (!playerObserver)
+                  playerObserver = GetComponent&lt;PlayerObserver&gt;();
+
+              playerObserver.InitializeSystem();
+          }
 
           public override void FixedUpdateNetwork()
           {
-              // FishNet host/server tick execution if available
-              if (IsServer)
-              {
-                  var ping = (float)(base.TimeManager.RoundTripTime * 1000f);
-                  fovLatencyCompensation = GetFOVMultiplierFromPing(ping);
+              if (!IsServer)
+                  return;
 
-                  DetectVisiblePlayersByFOV();
-              }
+              float ping = (float)(base.TimeManager.RoundTripTime * 1000f);
+              float time = (float)base.TimeManager.Time;
+
+              Vector3 cameraDirection = transform.forward;
+
+              playerObserver.ServerTick(cameraDirection, ping, time);
           }
 
           private void HandleVisibility(int observerId, PlayerVisibilityDetector player, bool isVisible)
@@ -1182,23 +1286,33 @@ Show Gizmos = true;
       }
       </code></pre>
 
-          <pre><code class="language-cs">// PlayerVisibilityDetector.cs
-      using FishNet.Object;
-      using UnityEngine;
+          <pre><code class="language-cs">// NetworkPlayerVisibilityDetector.cs (FishNet)
+          using FishNet.Object;
+          using UnityEngine;
 
-      public class PlayerVisibilityDetector : NetworkBehaviour
-      {
-          private void FixedUpdate()
+          public class NetworkPlayerVisibilityDetector : NetworkBehaviour
           {
-              // Run only on server host ticks
-              if (IsServer)
+              private PlayerVisibilityDetector playerVisibilityDetector;
+
+              public override void OnStartServer()
               {
-                  _deltaTime = Time.deltaTime;
-                UpdateVisibilityFromAlignedNormals();
+                  if (!playerVisibilityDetector)
+                      playerVisibilityDetector = GetComponent&lt;PlayerVisibilityDetector&gt;();
+
+                  playerVisibilityDetector.InitializeSystem();
+              }
+
+              public override void FixedUpdateNetwork()
+              {
+                  if (!IsServer)
+                      return;
+
+                  float time = (float)base.TimeManager.Time;
+
+                  playerVisibilityDetector.ServerTick(time);
               }
           }
-      }
-      </code></pre>
+          </code></pre>
 
           <p><em>FishNet notes:</em> adapt RPC/TargetRpc usage according to FishNet API; ensure server-only execution.</p>
         </div>
@@ -1325,6 +1439,12 @@ Show Gizmos = true;
 
           <p><em>Footstep notes:</em> choose the pattern that matches your networking framework; ensure server authority when triggering sound RPCs.</p>
         </div>
+        <p>
+        <strong>Architecture Note:</strong><br>
+        All integrations follow a unified server-authoritative pattern using <code>InitializeSystem()</code> and 
+        <code>ServerTick(...)</code>. This ensures consistent behavior across different networking frameworks and 
+        simplifies maintenance and extensibility.
+      </p>
       </section>
     </section>
 
@@ -1502,9 +1622,10 @@ Show Gizmos = true;
         <p class="cta-text">
           🔓 Unlock advanced features like latency compensation, cylinder detection and enhanced debugging tools.
         </p>
-        <a href="#" target="_blank" class="pro-button">
-          Get PRO Version 🚀
-        </a>
+
+        <!--<a href="#" target="_blank" class="pro-button">Get PRO Version 🚀</a>-->
+        <a class="pro-button disabled">PRO Coming Soon 🚀</a>
+
       </div>
 
       <div class="footer-meta">
