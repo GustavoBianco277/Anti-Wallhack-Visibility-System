@@ -122,15 +122,42 @@
         </p>
 
         <h3>2. Add PlayerObserver to Observers</h3>
-        <p>Attach <code>PlayerObserver</code> to the GameObject representing the player camera. The GameObject must track the position and rotation of the player's camera.</p>
-        <p><strong>Configuration examples</strong>:</p>
-        <pre>
-Camera FOV Angle = 70f;
-View Distance = 300f;
-Aspect Ratio = (16x9);
-Fov Check Mode = Bounds Corners
-Show Gizmos = true;
-        </pre>
+
+        <p>
+          Attach <code>PlayerObserver</code> to the GameObject representing the player camera.
+        </p>
+
+        <p>
+          This component is responsible for detecting other players based on the configured visibility mode.
+        </p>
+
+        <div class="info-box">
+          💡 In 180° mode, the GameObject must follow the camera position and rotation.<br>
+          In 360° mode, only the position is required.
+        </div>
+
+        <h4>Observer Mode (180° vs 360°)</h4>
+
+        <p>
+          The <code>PlayerObserver</code> supports two detection modes that define how visibility is calculated:
+        </p>
+
+        <ul class="features">
+          <li><strong>180° (FOV-based):</strong> Uses camera direction and frustum-based detection (classic behavior)</li>
+          <li><strong>360° (Sphere-based):</strong> Uses distance-only detection, ignoring camera rotation</li>
+        </ul>
+
+        <p>
+          In <strong>180° mode</strong>, visibility is calculated using field of view (FOV) and requires camera rotation data.
+        </p>
+
+        <p>
+          In <strong>360° mode</strong>, visibility is based purely on distance, allowing detection in all directions — including behind the player.
+        </p>
+
+        <div class="info-box">
+          🚀 The system supports both FOV-based and distance-based visibility, making it adaptable for competitive and casual multiplayer games.
+        </div>
 
         <h3>3. Add NetworkPlayerVisibilityDetector to Players</h3>
 
@@ -236,116 +263,155 @@ Show Gizmos = true;
 
         <!-- Player Observer-->
         <div class="component-panel">
-          <div class="component-header">
-            <h3>PlayerObserver</h3>
-            <span class="component-tag">Core</span>
-          </div>
-            
-          <div class="component-body">
-            <p>
-              The <code>PlayerObserver</code> represents the player's vision in the system. It is responsible for determining which targets are inside the field of view and should be evaluated for visibility.
-            </p>
-
-            <div class="info-box">
-              💡 This component defines how the player "sees" the world, including FOV, distance, and prediction behavior.
-            </div>
-
-            <h4>Camera & FOV Settings</h4>
-
-            <ul class="features">
-              <li><code>cameraFOVAngle</code> — Base vertical field of view</li>
-              <li><code>viewDistance</code> — Maximum detection range</li>
-              <li><code>aspectFormat</code> — Defines horizontal FOV based on screen ratio</li>
-            </ul>
-
-            <h4>FOV Detection Mode</h4>
-            <p>Defines how targets are evaluated inside the field of view:</p>
-
-            <ul class="features">
-              <li><strong>ClosestPoint:</strong> Faster but less precise</li>
-              <li><strong>BoundsCorners:</strong> More accurate, checks bounding box corners</li>
-            </ul>
-
-            <div class="info-box">
-              💡 Use <strong>BoundsCorners</strong> for competitive games where accuracy is critical.
-            </div>
-
-            <h4>FOV Smoothing</h4>
-
-            <ul class="features">
-              <li><code>smoothSpeed</code> — Controls how fast FOV adjustments are applied</li>
-            </ul>
-
-            <h4>Prediction</h4>
-
-            <p>
-              Predicts player movement to compensate for fast motion and reduce visibility delay when peeking.
-            </p>
-
-            <ul class="features">
-              <li><strong>Disabled:</strong> No prediction</li>
-              <li><strong>Velocity:</strong> Offsets observer position based on movement</li>
-              <li><strong>VelocityAndLatency <span class="pro-badge">PRO</span>:</strong> Combines movement with network latency</li>
-            </ul>
-
-            <ul class="features">
-              <li><code>velocityPredictionScale</code> — Controls prediction strength</li>
-            </ul>
-
-            <h4>Compensation FOV <span class="pro-badge">PRO</span></h4>
-            <p>
-              Dynamically expands the field of view to compensate for camera rotation speed and network latency.
-            </p>
-
-            <ul class="features">
-              <li><strong>Disabled:</strong> No compensation</li>
-              <li><strong>Rotation:</strong> Expands FOV based on camera movement</li>
-              <li><strong>RotationAndLatency:</strong> Combines rotation and ping compensation (recommended)</li>
-            </ul>
-
-            <ul class="features">
-              <li><code>minAngularSpeed</code> — Minimum rotation speed to trigger compensation</li>
-              <li><code>maxAngularSpeed</code> — Speed where compensation reaches maximum</li>
-              <li><code>maxRotationFOVExpansion</code> — Max FOV increase from rotation</li>
-              <li><code>maxPingFOVExpansion</code> — Max FOV increase from latency</li>
-            </ul>
-
-            <div class="info-box">
-              💡 This system prevents players from "losing visibility" when turning quickly or playing with high ping.
-            </div>
-
-            <h4>Prediction <span class="pro-badge">PRO</span></h4>
-
-            <p>
-              Provides fine control over how prediction behaves under different movement and latency conditions.
-            </p>
-
-            <ul class="features">
-              <li><code>PredictionAxisMode</code> — Choose between lateral, frontal, or combined prediction</li>
-              <li><code>lateralWeight</code> / <code>frontalWeight</code> — Control directional influence</li>
-              <li><code>maxPredictionDistance</code> — Limits how far prediction can offset the observer</li>
-              <li><code>latencyExpansionMultiplier</code> — Controls how latency affects prediction strength</li>
-            </ul>
-
-            <h4>Grace Prediction <span class="pro-badge">PRO</span></h4>
-
-            <ul class="features">
-              <li><code>useGracePrediction</code> — Smooths visibility when recently visible</li>
-              <li><code>gracePingStart</code> / <code>gracePingMax</code> — Defines activation range</li>
-              <li><code>minGraceScale</code> — Limits prediction intensity</li>
-            </ul>
-
-            <div class="warning-box">
-              ⚠️ Excessive prediction values may cause players to be detected earlier than intended.
-            </div>
-
-            <h4>Gizmos</h4>
-
-            <ul class="features">
-              <li><code>showGizmos</code> — Enables visualization in Scene view</li>
-            </ul>
-          </div>
+        <div class="component-header">
+          <h3>PlayerObserver</h3>
+          <span class="component-tag">Core</span>
         </div>
+          
+        <div class="component-body">
+          <p>
+            The <code>PlayerObserver</code> represents the player's vision in the system. It is responsible for determining which targets should be evaluated for visibility.
+          </p>
+
+          <div class="info-box">
+            💡 This component defines how the player "perceives" the world, including detection mode, range, and prediction behavior.
+          </div>
+
+          <h4>Observer Mode</h4>
+
+          <p>
+            Defines how visibility detection is performed:
+          </p>
+
+          <ul class="features">
+            <li><strong>180° (FOV-based):</strong> Uses camera direction and frustum-based detection</li>
+            <li><strong>360° (Sphere-based):</strong> Uses distance-only detection (no camera rotation required)</li>
+          </ul>
+
+          <ul class="features">
+            <li><code>maxObserverAngle</code> — Defines whether detection is 180° or 360°</li>
+            <li><code>viewDistance</code> — Maximum detection range (used in both modes)</li>
+          </ul>
+
+          <div class="info-box">
+            💡 360° mode is more performant and network-friendly, while 180° mode provides more realistic visibility behavior.
+          </div>
+
+          <div class="warning-box">
+            ⚠️ In 360° mode, players may be detected even when not visible on screen (e.g., behind the camera).
+          </div>
+
+          <h4>Detection Mode</h4>
+
+          <p>
+            The detection method should be configured according to the selected observer mode:
+          </p>
+
+          <ul class="features">
+            <li><strong>ClosestPoint:</strong> Faster, ideal for 360° mode</li>
+            <li><strong>BoundsCorners:</strong> More precise, recommended for 180° mode</li>
+          </ul>
+
+          <h4>Configuration examples</h4>
+
+          <h4>180° Mode (FOV-based)</h4>
+          <pre>
+          Max Observer Angle = 180
+          Camera FOV Angle = 70f;
+          View Distance = 300f;
+          Aspect Ratio = (16x9);
+          Player Detection Mode = BoundsCorners
+          Show Gizmos = true;
+          </pre>
+
+          <h4>360° Mode (Distance-based)</h4>
+          <pre>
+          Max Observer Angle = 360
+          View Distance = 300f;
+          Player Detection Mode = ClosestPoint
+          Show Gizmos = true;
+          </pre>
+
+          <div class="info-box">
+            💡 360° mode is recommended for performance and simplicity, while 180° mode provides more realistic visibility behavior.
+          </div>
+
+          <h4>Smoothing</h4>
+
+          <ul class="features">
+            <li><code>smoothSpeed</code> — Controls how fast adjustments are applied</li>
+          </ul>
+
+          <h4>Prediction</h4>
+
+          <p>
+            Predicts player movement to compensate for fast motion and reduce visibility delay when peeking.
+          </p>
+
+          <ul class="features">
+            <li><strong>Disabled:</strong> No prediction</li>
+            <li><strong>Velocity:</strong> Offsets observer position based on movement</li>
+            <li><strong>VelocityAndLatency <span class="pro-badge">PRO</span>:</strong> Combines movement with network latency</li>
+          </ul>
+
+          <ul class="features">
+            <li><code>velocityPredictionScale</code> — Controls prediction strength</li>
+          </ul>
+
+          <h4>FOV Compensation <span class="pro-badge">PRO</span></h4>
+          <p>
+            Dynamically expands the field of view to compensate for camera rotation speed and network latency.
+          </p>
+
+          <ul class="features">
+            <li><strong>Disabled:</strong> No compensation</li>
+            <li><strong>Rotation:</strong> Expands FOV based on camera movement</li>
+            <li><strong>RotationAndLatency:</strong> Combines rotation and ping compensation (recommended)</li>
+          </ul>
+
+          <ul class="features">
+            <li><code>minAngularSpeed</code> — Minimum rotation speed to trigger compensation</li>
+            <li><code>maxAngularSpeed</code> — Speed where compensation reaches maximum</li>
+            <li><code>maxRotationFOVExpansion</code> — Max FOV increase from rotation</li>
+            <li><code>maxPingFOVExpansion</code> — Max FOV increase from latency</li>
+          </ul>
+
+          <div class="info-box">
+            💡 Prevents visibility loss during fast camera movement or high latency.
+          </div>
+
+          <h4>Advanced Prediction <span class="pro-badge">PRO</span></h4>
+
+          <p>
+            Provides fine control over how prediction behaves under different movement and latency conditions.
+          </p>
+
+          <ul class="features">
+            <li><code>PredictionAxisMode</code> — Lateral, frontal, or combined prediction</li>
+            <li><code>lateralWeight</code> / <code>frontalWeight</code> — Directional influence</li>
+            <li><code>maxPredictionDistance</code> — Maximum offset distance</li>
+            <li><code>latencyExpansionMultiplier</code> — Controls latency impact</li>
+          </ul>
+
+          <h4>Grace Prediction <span class="pro-badge">PRO</span></h4>
+
+          <ul class="features">
+            <li><code>useGracePrediction</code> — Smooths visibility when recently visible</li>
+            <li><code>gracePingStart</code> / <code>gracePingMax</code> — Activation thresholds</li>
+            <li><code>minGraceScale</code> — Limits prediction intensity</li>
+          </ul>
+
+          <div class="warning-box">
+            ⚠️ Excessive prediction values may cause players to be detected earlier than intended.
+          </div>
+
+          <h4>Gizmos</h4>
+
+          <ul class="features">
+            <li><code>showGizmos</code> — Enables visualization in Scene view</li>
+          </ul>
+        </div>
+      </div>
 
         <!-- Player Visibility Detector-->
         <div class="component-panel">
