@@ -110,6 +110,10 @@
           <li>Real-time visibility events per observer/player pair</li>
           <li>Editor tools for debugging visibility in play mode</li>
           <li>UnityEvent integration for easy event handling in the Editor</li>
+          <li>Broad-phase optimization for scalable visibility checks <span class="pro-badge">PRO</span></li>
+          <li>Latency, movement, and animation compensation <span class="pro-badge">PRO</span></li>
+          <li>Shadow-based And Reflection environment detection <span class="pro-badge">PRO</span></li>
+          <li>Performance benchmark data for server-like scenarios</li>
         </ul>
       </section>
 
@@ -210,6 +214,11 @@
 
         <h3>6. Enable Gizmos for Debugging</h3>
         <p>In the Scene view, enable Gizmos to visualize FOV cones, face normals, and linecast paths.</p>
+
+        <h3>7. (Optional) Add ShadowLight <span class="pro-badge">PRO</span></h3>
+        <p>
+          To enable shadow-based Environment Detection, add a <code>ShadowLight</code> component to supported light sources and assign or refresh them through the <code>PlayerVisibilityDetector</code>.
+        </p>
       </section>
 
       <!-- Components -->
@@ -225,7 +234,7 @@
 
           <div class="component-body">
           <p>
-            Manages registration and unregistration of observers and players...
+            The <code>ObserverManager</code> is the central coordinator of the visibility system. It manages the registration and unregistration of observers and players, controls visibility state changes, dispatches visibility events, and provides global access to visibility-related operations.
           </p>
 
           <h4>Key fields and methods:</h4>
@@ -239,7 +248,7 @@
           <h4>Call Rate Mode</h4>
 
           <p>
-            The <code>ObserverManager</code> includes a call rate control system...
+            The <code>ObserverManager</code> includes a configurable call rate system that controls how often visibility updates are executed. This allows developers to balance detection responsiveness and CPU usage according to the needs of the project.
           </p>
 
           <ul class="features">
@@ -248,11 +257,15 @@
           </ul>
 
           <p>
-            When using <strong>Limited</strong>, you can configure how many times per second...
+            When using <strong>Limited</strong>, you can define how many visibility updates are executed per second. Lower update rates reduce CPU usage and improve scalability, while higher update rates provide faster visibility response and greater accuracy.
           </p>
 
           <div class="info-box">
             💡 Lower update rates improve performance but may introduce delay.
+          </div>
+
+          <div class="info-box">
+            💡 Competitive games commonly use fixed visibility update rates (for example 20–60 updates per second) to achieve predictable performance while maintaining responsive visibility detection.
           </div>
 
           <div class="warning-box">
@@ -260,7 +273,6 @@
           </div>
 
         </div>
-
         </div>
 
         <!-- Player Observer-->
@@ -657,11 +669,10 @@ dynamicLineSpeed </code></pre>
           </div>
         </div>
 
-
         <!-- Player Box Free-->
         <div class="component-panel">
           <div class="component-header">
-            <h3>PlayerBox</h3>
+            <h3>PlayerBox (Free)</h3>
             <span class="component-tag">Core</span>
           </div>
 
@@ -909,10 +920,6 @@ dynamicLineSpeed </code></pre>
         <p>
           Visibility determination follows a multi-stage validation pipeline designed to maximize accuracy while minimizing unnecessary calculations.
         </p>
-
-        <div class="info-box">
-          💡 Each stage progressively eliminates invalid targets before expensive physics and visibility calculations are executed.
-        </div>
 
         <div class="pipeline-image">
           <img src="pipeline/visibility-pipeline.png" alt="Visibility Pipeline">
@@ -1853,7 +1860,6 @@ dynamicLineSpeed </code></pre>
         simplifies maintenance and extensibility.
       </p>
       </section>
-    </section>
 
       <!-- Gizmos & Editor Tools -->
       <section id="gizmos" class="card">
