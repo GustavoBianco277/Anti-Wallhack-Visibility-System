@@ -41,6 +41,7 @@
         <li><a href="#setup" class="nav-link"><span class="dot"></span> Setup</a></li>
         <li><a href="#components" class="nav-link"><span class="dot"></span> Core Components</a></li>
         <li><a href="#howitworks" class="nav-link"><span class="dot"></span> How It Works</a></li>
+        <li><a href="#benchmarks" class="nav-link"><span class="dot"></span> Performance</a></li>
         <li><a href="#customization" class="nav-link"><span class="dot"></span> How to Tune & Optimize</a></li>
         <li><a href="#integration"class="nav-link"><span class="dot"></span> Integration</a></li>
         <li><a href="#gizmos" class="nav-link"><span class="dot"></span> Gizmos & Editor Tools</a></li>
@@ -75,6 +76,7 @@
       <h3>Quick Access</h3>
       <div class="quick-links">
         <a href="#setup">⚙️ Setup</a>
+        <a href="#benchmarks">📊 Performance</a>
         <a href="#integration">🔌 Integration</a>
         <a href="#troubleshooting">🛠 Troubleshooting</a>
         <a href="#faq">❓ FAQ</a>
@@ -278,131 +280,207 @@
           </div>
 
           <h4>Observer Mode</h4>
-
           <p>
-            Defines how visibility detection is performed:
+            Defines how the observer searches for visible targets.
           </p>
 
           <ul class="features">
-            <li><strong>180° (FOV-based):</strong> Uses camera direction and frustum-based detection</li>
-            <li><strong>360° (Sphere-based):</strong> Uses distance-only detection (no camera rotation required)</li>
-          </ul>
-
-          <ul class="features">
-            <li><code>maxObserverAngle</code> — Defines whether detection is 180° or 360°</li>
-            <li><code>viewDistance</code> — Maximum detection range (used in both modes)</li>
+            <li><strong>180°:</strong> Uses camera direction, FOV, aspect ratio, and precise frustum validation</li>
+            <li><strong>360°:</strong> Uses distance-based detection in all directions around the observer</li>
           </ul>
 
           <div class="info-box">
-            💡 360° mode is more performant and network-friendly, while 180° mode provides more realistic visibility behavior.
+            💡 In 180° mode, the observer requires camera position and rotation. In 360° mode, only position is required.
           </div>
 
           <div class="warning-box">
-            ⚠️ In 360° mode, players may be detected even when not visible on screen (e.g., behind the camera).
+            ⚠️ 360° mode can be more expensive in dense matches because it includes all players within distance before detailed validation.
           </div>
+
+          <h4>Camera & Detection Settings</h4>
+
+          <ul class="features">
+            <li><code>maxObserverAngle</code> → Defines the detection mode: 180° or 360°</li>
+            <li><code>cameraFOVAngle</code> → Base vertical FOV used for visibility detection</li>
+            <li><code>broadPhaseFOVMultiplier</code> → Expands the broad-phase FOV check before precise validation</li>
+            <li><code>viewDistance</code> → Maximum detection distance</li>
+            <li><code>aspectFormat</code> → Aspect ratio used to calculate horizontal FOV</li>
+            <li><code>detectionMode</code> → Defines how the target is tested during observer filtering</li>
+            <li><code>smoothSpeed</code> → Controls smoothing speed for dynamic FOV transitions</li>
+          </ul>
+
+          <h4>Aspect Ratio</h4>
+
+          <p>
+            The observer uses the selected aspect ratio to calculate horizontal FOV from the configured camera FOV.
+            This helps match visibility detection with the player's real screen format.
+          </p>
+
+          <ul class="features">
+            <li><code>4:3</code></li>
+            <li><code>16:9</code></li>
+            <li><code>16:10</code></li>
+            <li><code>21:9</code></li>
+            <li><code>32:9</code></li>
+          </ul>
 
           <h4>Detection Mode</h4>
 
-          <p>
-            The detection method should be configured according to the selected observer mode:
-          </p>
-
           <ul class="features">
-            <li><strong>ClosestPoint:</strong> Faster, ideal for 360° mode</li>
-            <li><strong>BoundsCorners:</strong> More precise, recommended for 180° mode</li>
+            <li><strong>ClosestPoint:</strong> Faster, uses the closest collider point and optional cached shadow point</li>
+            <li><strong>BoundsCorners:</strong> More precise, tests collider boundary points and optional cached shadow point</li>
           </ul>
-
-          <h4>Configuration examples</h4>
-
-          <h4>180° Mode (FOV-based)</h4>
-          <pre>
-          Max Observer Angle = 180
-          Camera FOV Angle = 70f;
-          View Distance = 300f;
-          Aspect Ratio = (16x9);
-          Player Detection Mode = BoundsCorners
-          Show Gizmos = true;
-          </pre>
-
-          <h4>360° Mode (Distance-based)</h4>
-          <pre>
-          Max Observer Angle = 360
-          View Distance = 300f;
-          Player Detection Mode = ClosestPoint
-          Show Gizmos = true;
-          </pre>
 
           <div class="info-box">
-            💡 360° mode is recommended for performance and simplicity, while 180° mode provides more realistic visibility behavior.
+            💡 Use ClosestPoint for performance-focused setups and BoundsCorners when precision is more important.
           </div>
 
-          <h4>Smoothing</h4>
-
-          <ul class="features">
-            <li><code>smoothSpeed</code> — Controls how fast adjustments are applied</li>
-          </ul>
-
-          <h4>Prediction</h4>
+          <h4>Broad Phase Optimization</h4>
+          <p>
+            Broad Phase Optimization is an early filtering step used before expensive visibility checks.
+            Instead of running detailed physics and sampling validation against every player, the observer first performs a lightweight distance and FOV approximation.
+          </p>
 
           <p>
-            Predicts player movement to compensate for fast motion and reduce visibility delay when peeking.
+            This reduces unnecessary calculations by quickly rejecting targets that are clearly outside the observer's possible visibility area.
           </p>
 
           <ul class="features">
-            <li><strong>Disabled:</strong> No prediction</li>
-            <li><strong>Velocity:</strong> Offsets observer position based on movement</li>
-            <li><strong>VelocityAndLatency <span class="pro-badge">PRO</span>:</strong> Combines movement with network latency</li>
+            <li>Performs a fast distance check before detailed validation</li>
+            <li>Uses an expanded FOV approximation to reduce false negatives</li>
+            <li>Prevents unnecessary line sampling against distant or invalid targets</li>
+            <li>Improves scalability when many players are active</li>
           </ul>
 
+          <h4>Broad Phase FOV Multiplier</h4>
+
+          <p>
+            The <code>broadPhaseFOVMultiplier</code> controls how much the initial FOV check is expanded before precise frustum validation.
+            Higher values are more tolerant, while lower values are stricter and more performance-focused.
+          </p>
+
           <ul class="features">
-            <li><code>velocityPredictionScale</code> — Controls prediction strength</li>
+            <li><strong>Lower values:</strong> Better performance, but may reject targets too early</li>
+            <li><strong>Higher values:</strong> Safer detection, but allows more targets into detailed checks</li>
           </ul>
+
+          <div class="info-box">
+            💡 Broad Phase does not decide final visibility. It only decides whether a target should continue to the more precise visibility pipeline.
+          </div>
+
+          <div class="warning-box">
+            ⚠️ Very low multiplier values may cause false negatives during fast camera movement, latency compensation, or edge-of-screen visibility.
+          </div>
 
           <h4>FOV Compensation <span class="pro-badge">PRO</span></h4>
+
           <p>
-            Dynamically expands the field of view to compensate for camera rotation speed and network latency.
+            FOV Compensation dynamically expands the observer's field of view to reduce visibility loss caused by fast camera rotation and network latency.
           </p>
 
           <ul class="features">
-            <li><strong>Disabled:</strong> No compensation</li>
-            <li><strong>Rotation:</strong> Expands FOV based on camera movement</li>
-            <li><strong>RotationAndLatency:</strong> Combines rotation and ping compensation (recommended)</li>
+            <li><strong>Disabled:</strong> Uses the configured FOV without compensation</li>
+            <li><strong>Rotation:</strong> Expands FOV based on camera rotation speed</li>
+            <li><strong>RotationAndLatency:</strong> Combines camera rotation and ping compensation</li>
           </ul>
+
+          <h4>FOV Compensation Parameters</h4>
 
           <ul class="features">
-            <li><code>minAngularSpeed</code> — Minimum rotation speed to trigger compensation</li>
-            <li><code>maxAngularSpeed</code> — Speed where compensation reaches maximum</li>
-            <li><code>maxRotationFOVExpansion</code> — Max FOV increase from rotation</li>
-            <li><code>maxPingFOVExpansion</code> — Max FOV increase from latency</li>
+            <li><code>minAngularSpeed</code> → Minimum camera rotation speed required before compensation starts</li>
+            <li><code>maxAngularSpeed</code> → Rotation speed where maximum compensation is reached</li>
+            <li><code>maxPingFOVExpansion</code> → Maximum FOV expansion caused by network latency</li>
+            <li><code>maxRotationFOVExpansion</code> → Maximum FOV expansion caused by camera rotation</li>
+            <li><code>maxPingForFullCompensation</code> → Ping value where latency compensation reaches full strength</li>
           </ul>
 
-          <div class="info-box">
-            💡 Prevents visibility loss during fast camera movement or high latency.
+          <div class="pro-box">
+            🚀 Helps reduce false negatives during fast turns, corner peeking, and high-ping gameplay.
           </div>
 
-          <h4>Advanced Prediction <span class="pro-badge">PRO</span></h4>
+          <div class="warning-box">
+            ⚠️ Excessive FOV expansion may cause players near the screen edge to become visible earlier than intended.
+          </div>
+
+          <h4>Observer Prediction <span class="pro-badge">PRO</span></h4>
 
           <p>
-            Provides fine control over how prediction behaves under different movement and latency conditions.
+            Observer Prediction offsets the virtual observer position to compensate for player movement and latency.
+            This improves visibility consistency when players move quickly or peek around corners.
           </p>
 
           <ul class="features">
-            <li><code>PredictionAxisMode</code> — Lateral, frontal, or combined prediction</li>
-            <li><code>lateralWeight</code> / <code>frontalWeight</code> — Directional influence</li>
-            <li><code>maxPredictionDistance</code> — Maximum offset distance</li>
-            <li><code>latencyExpansionMultiplier</code> — Controls latency impact</li>
+            <li><strong>Disabled:</strong> No positional prediction</li>
+            <li><strong>Velocity:</strong> Uses player movement velocity to offset the virtual observer</li>
+            <li><strong>VelocityAndLatency:</strong> Scales velocity prediction using network latency</li>
+          </ul>
+
+          <h4>Prediction Parameters</h4>
+
+          <ul class="features">
+            <li><code>maxPredictionDistance</code> → Maximum virtual observer offset distance</li>
+            <li><code>velocityPredictionScale</code> → Scales how strongly velocity affects prediction</li>
+            <li><code>latencyExpansionMultiplier</code> → Caps latency-based prediction growth</li>
+            <li><code>predictionAxisMode</code> → Selects lateral, frontal, or combined prediction</li>
+            <li><code>lateralWeight</code> → Weight applied to side movement prediction</li>
+            <li><code>frontalWeight</code> → Weight applied to forward movement prediction</li>
+          </ul>
+
+          <h4>Prediction Axis Mode</h4>
+
+          <ul class="features">
+            <li><strong>Lateral:</strong> Compensates side movement, useful for corner peeking</li>
+            <li><strong>Frontal:</strong> Compensates forward and backward movement</li>
+            <li><strong>LateralAndFrontal:</strong> Combines both axes for more complete prediction</li>
           </ul>
 
           <h4>Grace Prediction <span class="pro-badge">PRO</span></h4>
 
+          <p>
+            Grace Prediction smooths latency-aware prediction when a target was recently visible.
+            This helps reduce flickering when players rapidly move in and out of cover.
+          </p>
+
           <ul class="features">
-            <li><code>useGracePrediction</code> — Smooths visibility when recently visible</li>
-            <li><code>gracePingStart</code> / <code>gracePingMax</code> — Activation thresholds</li>
-            <li><code>minGraceScale</code> — Limits prediction intensity</li>
+            <li><code>useGracePrediction</code> → Enables prediction smoothing after recent visibility</li>
+            <li><code>gracePingStart</code> → Ping where grace prediction begins to take effect</li>
+            <li><code>gracePingMax</code> → Ping where grace prediction reaches full strength</li>
+            <li><code>minGraceScale</code> → Minimum prediction scale when grace is fully active</li>
           </ul>
 
+          <div class="info-box">
+            💡 Grace Prediction is useful for reducing visibility flicker in high-latency corner-peeking situations.
+          </div>
+
           <div class="warning-box">
-            ⚠️ Excessive prediction values may cause players to be detected earlier than intended.
+            ⚠️ High prediction values can reveal players too early. Tune prediction based on movement speed, tick rate, and average ping.
+          </div>
+
+          <h4>Configuration Examples</h4>
+
+          <h4>180° Mode — Precision Setup</h4>
+          <pre>
+          Max Observer Angle = 180
+          Camera FOV Angle = 60
+          Broad Phase FOV Multiplier = 1.7
+          View Distance = 250
+          Aspect Format = 16:9
+          Detection Mode = BoundsCorners
+          FOV Compensation Mode = RotationAndLatency
+          Observer Prediction Mode = VelocityAndLatency
+          </pre>
+
+          <h4>360° Mode — Distance-Based Setup</h4>
+          <pre>
+          Max Observer Angle = 360
+          View Distance = 250
+          Detection Mode = ClosestPoint
+          FOV Compensation Mode = Disabled
+          Observer Prediction Mode = Velocity
+          </pre>
+
+          <div class="info-box">
+            💡 A future 270° mode can be used as a middle ground between 180° precision and 360° full-radius detection, adding extra side coverage for latency compensation.
           </div>
 
           <h4>Gizmos</h4>
@@ -411,7 +489,7 @@
             <li><code>showGizmos</code> — Enables visualization in Scene view</li>
           </ul>
         </div>
-      </div>
+        </div>
 
         <!-- Player Visibility Detector-->
         <div class="component-panel">
@@ -421,9 +499,8 @@
           </div>
 
           <div class="component-body">
-
             <p>
-              Responsible for performing visibility validation using line sampling, collider geometry, and physics-based checks.
+              Responsible for performing visibility validation using line sampling, collider geometry, physics-based checks, and optional environment-based detection.
               This component works together with <code>PlayerObserver</code> and is automatically added when using 
               <code>NetworkPlayerVisibilityDetector</code>.
             </p>
@@ -441,7 +518,7 @@
             </ul>
 
             <div class="pro-box">
-            <strong>Pro Feature:</strong> Cylinder-based detection improves accuracy for rounded player shapes
+              <strong>Pro Feature:</strong> Cylinder-based detection improves accuracy for rounded player shapes.
             </div>
 
             <!-- LINES -->
@@ -453,13 +530,11 @@
             </ul>
 
             <pre><code class="language-cs">
-        // Key parameters
-        verticalFixedLineCount
-        horizontalFixedLineCount
-        dynamicLineSpacing
-        dynamicLineSpeed
-            </code></pre>
-
+// Key parameters
+verticalFixedLineCount
+horizontalFixedLineCount
+dynamicLineSpacing
+dynamicLineSpeed </code></pre>
             <!-- GRID -->
             <h4>Grid Subdivision</h4>
             <p>
@@ -473,9 +548,49 @@
             <!-- ALIGNMENT -->
             <h4>Alignment Filtering</h4>
             <ul class="features">
-              <li><code>alignmentThreshold</code> → minimum valid angle</li>
-              <li><code>targetAlignmentThreshold</code> → refined validation</li>
+              <li><code>alignmentThreshold</code> → Minimum valid angle</li>
+              <li><code>targetAlignmentThreshold</code> → Refined target validation</li>
             </ul>
+
+            <!-- ENVIRONMENT DETECTION -->
+            <h4>Environment Detection <span class="pro-badge">PRO</span></h4>
+
+            <p>
+              Environment Detection extends the regular line-of-sight validation by allowing the system to detect players through indirect visual information,
+              such as projected shadows. This makes visibility checks more realistic in scenarios where the player body is hidden, but environmental clues are still visible.
+            </p>
+
+            <ul class="features">
+              <li><strong>Disabled:</strong> Uses only direct line-of-sight validation</li>
+              <li><strong>Shadow:</strong> Enables indirect detection through projected shadows</li>
+              <li><strong>Reflection:</strong> Planned feature for reflective surface detection</li>
+            </ul>
+
+            <div class="pro-box">
+              🚀 Environment Detection expands the visibility system beyond traditional ray-based checks, improving realism and fairness in competitive scenarios.
+            </div>
+
+            <h4>Shadow Detection Settings <span class="pro-badge">PRO</span></h4>
+
+            <p>
+              When Environment Detection is set to <strong>Shadow</strong>, the detector uses registered <code>ShadowLight</code> sources to evaluate whether a player's shadow is visible to the observer.
+            </p>
+
+            <ul class="features">
+              <li><code>Light Sources</code> → List of <code>ShadowLight</code> components used for shadow visibility checks</li>
+              <li><code>Min Shadow Vertical Angle</code> → Minimum vertical angle required for a shadow to be considered valid</li>
+              <li><code>Shadow Line Count</code> → Number of lines used to sample the projected shadow</li>
+              <li><code>Shadow Light Refresh Rate</code> → How often the detector refreshes nearby or assigned shadow lights</li>
+              <li><code>Enable Shadow Ground Projection</code> → Projects shadow samples onto the environment for improved accuracy</li>
+            </ul>
+
+            <div class="info-box">
+              💡 Higher shadow line counts improve detection accuracy but increase physics-check cost. Use lower values for large matches and higher values for precise competitive scenarios.
+            </div>
+
+            <div class="warning-box">
+              ⚠️ Shadow Detection requires properly configured <code>ShadowLight</code> sources, obstacle masks, and scene geometry. Incorrect setup may cause false positives or missed shadow visibility.
+            </div>
 
             <!-- COMPENSATION -->
             <h4>Size Compensation</h4>
@@ -486,7 +601,34 @@
             </ul>
 
             <div class="pro-box">
-              <strong>Pro Feature:</strong> Latency and animation compensation improves fairness in high-ping scenarios
+              <strong>Pro Feature:</strong> Latency and animation compensation improves fairness in high-ping scenarios.
+            </div>
+
+            <!-- ANIMATION COMPENSATION -->
+            <h4>Animation Compensation <span class="pro-badge">PRO</span></h4>
+
+            <p>
+              Animation Compensation dynamically adjusts the visibility sampling area according to the current animation pose.
+              This helps prevent situations where important body parts move outside the base collider and become incorrectly ignored by visibility checks.
+            </p>
+
+            <ul class="features">
+              <li>Detects animation pose overflow outside the player collider</li>
+              <li>Supports head, hands, and feet compensation</li>
+              <li>Improves visibility accuracy during running, crouching, jumping, leaning, and attack animations</li>
+              <li>Works together with velocity and latency compensation systems</li>
+            </ul>
+
+            <div class="info-box">
+              💡 Animation Compensation is particularly useful for characters with expressive animations where limbs or the head frequently extend beyond the collider boundaries.
+            </div>
+
+            <div class="pro-box">
+              🚀 Prevents false negatives caused by animation-driven movement, improving fairness and consistency in competitive multiplayer games.
+            </div>
+
+            <div class="warning-box">
+              ⚠️ Excessive animation compensation may increase the effective detection area and cause players to become visible earlier than intended. Adjust compensation values carefully.
             </div>
 
             <!-- PRO EXTRA -->
@@ -496,6 +638,8 @@
               <li>Latency-based expansion scaling</li>
               <li>Animation-based collider adjustment</li>
               <li>Double wall optimization check</li>
+              <li>Shadow-based environment detection</li>
+              <li>Reflection-based detection planned for future versions</li>
             </ul>
 
             <!-- PERFORMANCE -->
@@ -504,15 +648,15 @@
               <li><code>stateStabilizeTime</code> prevents flickering</li>
               <li>Layer masks control raycast cost</li>
               <li>Smoothing reduces abrupt changes</li>
+              <li>Shadow light refresh rate helps control environment detection cost</li>
             </ul>
 
             <div class="warning-box">
-              ⚠️ High line counts and dynamic speed can impact performance if not tuned properly
+              ⚠️ High line counts, dynamic speed, shadow line count, and frequent light refresh can impact performance if not tuned properly.
             </div>
-
           </div>
-
         </div>
+
 
         <!-- Player Box Free-->
         <div class="component-panel">
@@ -674,6 +818,64 @@
           </div>
         </div>
 
+        <!-- Shadow Light-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>ShadowLight <span class="pro-badge">PRO</span></h3>
+            <span class="component-tag">PRO</span>
+          </div>
+
+          <div class="component-body">
+
+            <p>
+              ShadowLight represents a light source capable of generating shadow visibility information for the Environment Detection system.
+            </p>
+
+            <div class="pro-box">
+              🚀 Enables indirect player detection through projected shadows.
+            </div>
+
+            <h4>Supported Light Types</h4>
+
+            <ul class="features">
+              <li><strong>Directional:</strong> Infinite directional light (sunlight)</li>
+              <li><strong>Point:</strong> Radial light source</li>
+              <li><strong>Spot:</strong> Cone-based light source</li>
+            </ul>
+
+            <h4>Shadow Modes</h4>
+
+            <ul class="features">
+              <li><strong>Simple:</strong> Fast single-line shadow evaluation</li>
+              <li><strong>Accurate:</strong> Multi-line shadow sampling for improved precision</li>
+            </ul>
+
+            <h4>Light Settings</h4>
+
+            <ul class="features">
+              <li><code>Light Type</code> → Defines the light source type</li>
+              <li><code>Range</code> → Maximum shadow influence distance</li>
+              <li><code>Spot Angle</code> → Cone angle used by Spot lights</li>
+              <li><code>Near Horizontal Angle</code> → Controls shadow projection spread</li>
+              <li><code>Sync With Unity Light</code> → Automatically synchronizes settings with a Unity Light component</li>
+            </ul>
+
+            <div class="info-box">
+              💡 When Sync With Unity Light is enabled, ShadowLight automatically updates its internal configuration from the attached Unity Light component.
+            </div>
+
+            <h4>Performance Recommendations</h4>
+
+            <ul class="features">
+              <li>Use Simple mode for large-scale matches</li>
+              <li>Use Accurate mode only when shadow precision is required</li>
+              <li>Reduce Shadow Light Refresh Rate for better performance</li>
+              <li>Limit the number of active ShadowLights in large maps</li>
+            </ul>
+
+          </div>
+        </div>
+
         <!-- VisibilityUnityEventRelay-->
         <div class="component-panel">
           <div class="component-header">
@@ -692,57 +894,196 @@
 
       <!-- How It Works -->
       <section id="howitworks" class="card">
-      <h2 class="section-title">How It Works</h2>
 
-      <p>
-        The system determines player visibility using a combination of Field of View (FOV) filtering,
-        geometric sampling, and physics-based validation. All checks are executed on the server,
-        ensuring that visibility cannot be manipulated client-side.
-      </p>
+        <h2 class="section-title">How It Works</h2>
 
-      <!-- CORE FLOW -->
-      <h3>Detection Pipeline</h3>
-      <ol style="color:var(--muted);">
-        <li><strong>FOV Filtering:</strong> The <code>PlayerObserver</code> first filters potential targets based on distance and camera angles.</li>
-        <li><strong>Geometry Sampling:</strong> The <code>PlayerVisibilityDetector</code> generates sampling lines across the target collider (box or cylinder).</li>
-        <li><strong>Linecast Validation:</strong> Each line is tested using physics checks to verify if there is a clear path.</li>
-        <li><strong>Obstacle Handling:</strong> Wall clamping ensures that visibility is blocked when obstacles are present.</li>
-        <li><strong>Visibility Decision:</strong> If at least one valid line reaches the target, the player is considered visible.</li>
-        <li><strong>Event Dispatch:</strong> The system updates visibility state and triggers events via <code>ObserverManager</code>.</li>
-      </ol>
+        <p>
+          The system determines player visibility using a combination of Field of View (FOV) filtering,
+          geometric sampling, environment detection, and physics-based validation.
+          All checks are executed on the server, ensuring that visibility cannot be manipulated client-side.
+        </p>
 
-      <!-- CORE CONCEPTS -->
-      <h3>Core Concepts</h3>
-      <ul class="features">
-        <li><strong>Server-Side Authority</strong> → Prevents cheating and client manipulation</li>
-        <li><strong>Line Sampling</strong> → Uses multiple rays instead of a single check</li>
-        <li><strong>Dynamic Scanning</strong> → Improves detection accuracy over time</li>
-        <li><strong>Wall Clamping</strong> → Blocks visibility through obstacles</li>
-        <li><strong>State Stabilization</strong> → Prevents flickering visibility</li>
-      </ul>
+        <!-- VISIBILITY PIPELINE -->
+        <h3>Visibility Pipeline</h3>
 
-      <!-- PRO SECTION -->
-      <h3>Advanced Features <span class="pro-badge">PRO</span></h3>
-      <ul class="features">
-        <li>Cylindrical collider support for more realistic player shapes</li>
-        <li>Enhanced wall clamping for complex geometry and corner cases</li>
-        <li>Latency and velocity compensation for smoother gameplay</li>
-        <li>Animation-aware collider expansion</li>
-      </ul>
+        <p>
+          Visibility determination follows a multi-stage validation pipeline designed to maximize accuracy while minimizing unnecessary calculations.
+        </p>
 
-      <div class="pro-box">
-        🚀 The Pro version improves reliability in competitive scenarios by reducing false positives
-        and handling edge cases such as high latency and partial visibility behind cover.
+        <div class="info-box">
+          💡 Each stage progressively eliminates invalid targets before expensive physics and visibility calculations are executed.
+        </div>
+
+        <div class="pipeline-image">
+          <img src="pipeline/visibility-pipeline.png" alt="Visibility Pipeline">
+        </div>
+
+        <div class="info-box">
+        💡 Visibility determination follows a staged validation process. Each step filters invalid targets before more expensive calculations are performed, improving both accuracy and scalability.
+        </div>
+
+        <div class="pro-box">
+          🚀 The visibility pipeline combines distance filtering, broad-phase optimization, FOV validation, collider sampling, environment detection, and physics validation to achieve reliable server-authoritative visibility.
+        </div>
+
+        <!-- CORE CONCEPTS -->
+        <h3>Core Concepts</h3>
+
+        <ul class="features">
+          <li><strong>Server-Side Authority</strong> → Prevents cheating and client manipulation</li>
+          <li><strong>Broad Phase Filtering</strong> → Rejects invalid targets before expensive calculations</li>
+          <li><strong>Line Sampling</strong> → Uses multiple rays instead of a single visibility check</li>
+          <li><strong>Dynamic Scanning</strong> → Improves coverage and precision over time</li>
+          <li><strong>Wall Clamping</strong> → Prevents visibility through solid geometry</li>
+          <li><strong>State Stabilization</strong> → Reduces flickering and unstable visibility states</li>
+        </ul>
+
+        <!-- PRO FEATURES -->
+        <h3>Advanced Features <span class="pro-badge">PRO</span></h3>
+
+        <ul class="features">
+          <li>Cylindrical collider support for more realistic player representation</li>
+          <li>Environment Detection through projected shadows</li>
+          <li>Reflection-based visibility detection (coming soon)</li>
+          <li>Animation-aware collider expansion</li>
+          <li>Latency and velocity compensation</li>
+          <li>Dynamic FOV compensation</li>
+          <li>Advanced wall clamping for complex geometry</li>
+        </ul>
+
+        <div class="pro-box">
+          🚀 The Pro version improves reliability in competitive multiplayer environments by handling edge cases such as latency, animation-driven movement, shadow visibility, and partial exposure behind cover.
+        </div>
+
+        <!-- NETWORK NOTE -->
+        <h3>Networking Note</h3>
+
+        <p>
+          For deterministic multiplayer frameworks such as Photon Fusion, visibility checks should run inside fixed-tick simulation methods such as <code>FixedUpdateNetwork()</code>.
+          Avoid using rendering loops or frame-dependent updates for visibility validation.
+        </p>
+
+        <div class="info-box">
+          💡 Running visibility logic inside the networking simulation ensures deterministic and server-authoritative results.
+        </div>
+
+      </section>
+
+      <!-- Performance Benchmarks -->
+      <section id="benchmarks" class="card">
+        <h2 class="section-title">Performance Benchmarks</h2>
+
+        <p>
+          The following results were captured in a server-like benchmark scenario using a 50m × 50m high-density stress test with 2 teams.
+          The test measures visibility processing cost under different player counts.
+        </p>
+
+        <div class="info-box">
+        💡 These tests were executed using 180° FOV-based observer detection at 32 visibility updates per second, with Environment Detection disabled.
       </div>
 
-      <!-- NETWORK NOTE -->
-      <h3>Networking Note</h3>
-      <p>
-        For deterministic multiplayer frameworks (e.g., Photon Fusion), visibility checks should run in fixed-tick methods
-        such as <code>FixedUpdateNetwork()</code>. Avoid using <code>Update()</code> or rendering loops for physics-based validation.
-      </p>
+        <h3>Server-Like Benchmark Results</h3>
 
-    </section>
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Players</th>
+              <th>FPS Impact</th>
+              <th>System Time</th>
+              <th>Cost / Player</th>
+              <th>Raycasts / Frame</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>10</td>
+              <td><span class="status-dot green"></span>1.44%</td>
+              <td>2.10 ms</td>
+              <td>0.210 ms</td>
+              <td>397</td>
+            </tr>
+
+            <tr>
+              <td>25</td>
+              <td><span class="status-dot green"></span>4.86%</td>
+              <td>5.72 ms</td>
+              <td>0.229 ms</td>
+              <td>949</td>
+            </tr>
+
+            <tr>
+              <td>50</td>
+              <td><span class="status-dot yellow"></span>13.44%</td>
+              <td>19.43 ms</td>
+              <td>0.389 ms</td>
+              <td>5,057</td>
+            </tr>
+
+            <tr>
+              <td>100</td>
+              <td><span class="status-dot red"></span>44.08%</td>
+              <td>61.46 ms</td>
+              <td>0.615 ms</td>
+              <td>15,008</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Performance Summary</h3>
+
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Scenario</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>Typical Competitive Match (10 Players)</td>
+              <td><span class="status-dot green"></span>1.44% Impact</td>
+            </tr>
+
+            <tr>
+              <td>Medium Match (25 Players)</td>
+              <td><span class="status-dot green"></span>4.86% Impact</td>
+            </tr>
+
+            <tr>
+              <td>Large Match (50 Players)</td>
+              <td><span class="status-dot yellow"></span>13.44% Impact</td>
+            </tr>
+
+            <tr>
+              <td>Stress Test (100 Players)</td>
+              <td><span class="status-dot red"></span>44.08% Impact</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Benchmark Environment</h3>
+
+        <ul class="features">
+          <li>50m × 50m high-density area</li>
+          <li>2 teams</li>
+          <li>Server-like mode</li>
+          <li>ObserverManager update rate: 32 ticks per second</li>
+          <li>Observer mode: 180° FOV-based detection</li>
+          <li>Environment Detection disabled</li>
+          <li>Editor rendering minimized</li>
+          <li>Real visibility calculations using FOV validation, linecasts, and collider sampling</li>
+        </ul>
+
+        <div class="pro-box">
+          🚀 Real-world multiplayer maps typically distribute players over larger areas, resulting in fewer simultaneous visibility checks and lower server workload.
+        </div>
+
+        <div class="warning-box">
+          ⚠️ Benchmark results are provided as a reference. Actual performance depends on scene complexity, hardware, physics settings, tick rate, and visibility configuration.
+        </div>
+      </section>
 
       <!-- How to Tune & Optimize -->
       <section id="customization" class="card">
