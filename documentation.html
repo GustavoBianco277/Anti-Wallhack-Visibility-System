@@ -39,7 +39,13 @@
 
     <div style="margin-left:auto; display:flex; gap:12px; align-items:center;">
       <a href="index.html" style="color:var(--muted); text-decoration:none; border:1px solid rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px;">Home</a>
-      <a href="Documentation.pdf" download style="color:var(--accent); text-decoration:none; padding:8px 12px; border-radius:8px; border:1px solid rgba(29,161,242,0.08);">⬇️ Download PDF</a>
+      <a href="Documentation.pdf"
+        download
+        class="download-pdf-btn"
+        data-analytics-event="download_pdf">
+        ⬇️ Download PDF
+      </a>
+      
     </div>
   </div>
 
@@ -87,10 +93,10 @@
       <h3>Quick Access</h3>
       <div class="quick-links">
         <a href="#setup">⚙️ Setup</a>
-        <a href="#benchmarks">📊 Performance</a>
-        <a href="#integration">🔌 Integration</a>
-        <a href="#troubleshooting">🛠 Troubleshooting</a>
-        <a href="#faq">❓ FAQ</a>
+        <a href="#benchmarks" data-analytics-event="click_quick_performance">📊 Performance</a>
+        <a href="#integration" data-analytics-event="click_quick_integration">🔌 Integration</a>
+        <a href="#troubleshooting" data-analytics-event="click_quick_troubleshooting">🛠 Troubleshooting</a>
+        <a href="#faq" data-analytics-event="click_quick_faq">❓ FAQ</a>
       </div>
     </div>
 
@@ -1220,7 +1226,9 @@ dynamicLineSpeed </code></pre>
         </p>
 
         <!--<a href="#" target="_blank" class="pro-button">Get PRO Version 🚀</a>-->
-        <a class="pro-button disabled">PRO Coming Soon 🚀</a>
+        <a class="pro-button disabled" data-analytics-event="click_pro_button">
+          PRO Coming Soon 🚀
+        </a>
         
       </div>
 
@@ -2048,7 +2056,9 @@ dynamicLineSpeed </code></pre>
         </p>
 
         <!--<a href="#" target="_blank" class="pro-button">Get PRO Version 🚀</a>-->
-        <a class="pro-button disabled">PRO Coming Soon 🚀</a>
+        <a class="pro-button disabled" data-analytics-event="click_pro_button">
+          PRO Coming Soon 🚀
+        </a>
 
       </div>
 
@@ -2062,5 +2072,6 @@ dynamicLineSpeed </code></pre>
   </div>
 
   <script src="docs-script.js"></script>
+  <script src="analytics-events.js"></script>
 </body>
 </html>

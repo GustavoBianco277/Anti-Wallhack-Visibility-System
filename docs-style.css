@@ -286,6 +286,26 @@
   .tab-content.active { display: block; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
 
+  .download-pdf-btn
+{
+    color: var(--accent);
+    text-decoration: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(29,161,242,0.08);
+    transition: all 0.2s ease;
+}
+
+.download-pdf-btn:hover
+{
+    background: rgba(29,161,242,0.08);
+    border-color: rgba(29,161,242,0.25);
+}
+
+.download-pdf-btn:active
+{
+    transform: translateY(1px);
+}
   /* Prism block adjustments */
   pre[class*="language-"] {
     background: #0e131b;
