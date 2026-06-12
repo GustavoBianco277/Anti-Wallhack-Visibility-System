@@ -15,6 +15,12 @@
   </script>
 
   <meta name="description" content="Anti-Wallhack Visibility System — Server-side visibility detection for Unity multiplayer games.">
+
+  <meta property="og:title" content="Anti-Wallhack Visibility System">
+  <meta property="og:description" content="Server-authoritative visibility validation for Unity multiplayer games.">
+  <meta property="og:image" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/icon.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/">
   <title>Anti-Wallhack Visibility System</title>
 
   <link rel="stylesheet" href="style.css">
@@ -27,17 +33,41 @@
 <header class="hero">
   <img src="icon.png" alt="Logo">
   <h1>Anti-Wallhack Visibility System</h1>
-  <p>Server-side visibility detection for competitive multiplayer games</p>
+
+  <p class="hero-subtitle">
+    Server-authoritative visibility validation designed to prevent wallhack exploits in competitive Unity multiplayer games.
+  </p>
+
+  <div class="hero-highlights">
+    <span>Server-Side</span>
+    <span>Unity Multiplayer</span>
+    <span>Physics-Based</span>
+    <span>Performance Tested</span>
+  </div>
 
  <div class="hero-buttons">
-  <a class="button" href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-335182" target="_blank">
+  <a class="button"
+    href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-335182"
+    target="_blank"
+    data-analytics-event="click_free_download">
     Download Free Version
   </a>
 
-  <a class="button secondary disabled">
+  <a class="button secondary disabled"
+    data-analytics-event="click_pro_button">
     Pro Version (Coming Soon)
   </a>
+
+  <a class="button secondary"
+    href="documentation.html"
+    data-analytics-event="click_hero_documentation">
+    📘 Documentation
+  </a>
 </div>
+
+<p class="trust-line">
+  ✓ Benchmarked with up to 100 simultaneous players.
+</p>
 </header>
 
 <!-- VIDEO -->
@@ -63,6 +93,78 @@
     allowfullscreen>
     </iframe>
   </div>
+</section>
+
+  <!-- PERFORMANCE -->
+<section>
+
+  <h2>📊 Performance Benchmarks</h2>
+
+  <p class="section-description">
+    Tested under a high-density server-like scenario using 32 visibility updates per second,
+    180° FOV-based observer detection, and Environment Detection disabled.
+  </p>
+
+  <!-- BENCHMARK VIDEO -->
+
+  <h3>🎥 Benchmark Demonstration</h3>
+
+  <p class="section-description">
+    Real benchmark session demonstrating system scalability under high-density multiplayer conditions.
+  </p>
+
+  <div class="benchmark-video">
+    <iframe
+      src="https://www.youtube.com/embed/s8WKVt5gVt0"
+      title="Benchmark Demonstration"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen>
+    </iframe>
+  </div>
+
+  <!-- BENCHMARK STATS -->
+
+  <div class="benchmark-preview-card">
+
+    <div class="benchmark-stat">
+      <strong>10 Players</strong>
+      <span>2.10 ms</span>
+      <small>1.44% impact</small>
+    </div>
+
+    <div class="benchmark-stat">
+      <strong>25 Players</strong>
+      <span>5.72 ms</span>
+      <small>4.86% impact</small>
+    </div>
+
+    <div class="benchmark-stat">
+      <strong>50 Players</strong>
+      <span>19.43 ms</span>
+      <small>13.44% impact</small>
+    </div>
+
+    <div class="benchmark-stat">
+      <strong>100 Players</strong>
+      <span>61.46 ms</span>
+      <small>44.08% impact</small>
+    </div>
+
+  </div>
+
+  <p class="benchmark-note">
+    Real multiplayer maps typically distribute players over larger areas, reducing simultaneous visibility checks and lowering server workload.
+  </p>
+
+  <div class="benchmark-button-container">
+    <a class="button"
+      href="documentation.html#benchmarks"
+      data-analytics-event="click_view_benchmarks">
+      📊 View Full Benchmarks
+    </a>
+  </div>
+
 </section>
 
 <!-- VERSIONS -->
@@ -99,7 +201,7 @@
         <li>✔ Box + Cylinder player geometry</li>
         <li>✔ Animation compensation</li>
         <li>✔ Shadow detection</li>
-        <li>✔ Reflection detection</li>
+        <li>🚧 Reflection detection (Planned)</li>
         <li>✔ Advanced speed & latency handling</li>
         <li>✔ Full customization</li>
         <li>✔ High performance</li>
@@ -118,12 +220,55 @@
 <!-- FEATURES -->
 <section>
   <h2>⚙️ Features</h2>
-  <ul>
-    <li>✔ Observer-based Field of View (FOV) and distance</li>
-    <li>✔ Optimized raycasting logic</li>
-    <li>✔ Customizable detection parameters</li>
-    <li>✔ Real-time debug gizmos</li>
-  </ul>
+
+  <div class="features-grid">
+    <div>✔ Server-authoritative visibility validation</div>
+    <div>✔ Observer-based FOV and distance detection</div>
+    <div>✔ Broad-phase visibility optimization</div>
+    <div>✔ Dynamic line sampling system</div>
+    <div>✔ Customizable detection parameters</div>
+    <div>✔ Real-time debug gizmos</div>
+    <div>✔ Multi-framework integration examples</div>
+    <div>✔ Performance benchmark documentation</div>
+  </div>
+</section>
+
+  <!-- NETWORKING -->
+<section>
+  <h2>🔌 Supported Networking Solutions</h2>
+
+  <p class="section-description">
+    Designed to work with popular Unity multiplayer frameworks through server-authoritative visibility validation.
+  </p>
+
+  <div class="network-badges">
+
+    <div class="network-badge featured">
+      Photon Fusion
+    </div>
+
+    <div class="network-badge">
+      PUN 2
+    </div>
+
+    <div class="network-badge">
+      Mirror
+    </div>
+
+    <div class="network-badge">
+      Fish-Networking
+    </div>
+
+    <div class="network-badge">
+      Netcode for GameObjects
+    </div>
+
+  </div>
+
+  <div class="info-box">
+    💡 The system is networking-framework agnostic and can be integrated into other server-authoritative multiplayer solutions.
+  </div>
+
 </section>
 
 <!-- ADVANCED -->
@@ -142,8 +287,8 @@
     </div>
 
     <div>
-      <h3>Reflection Detection</h3>
-      <p>Detects player visibility through reflections.</p>
+      <h3>Reflection Detection <span class="planned-badge">Planned</span></h3>
+      <p>Future support for reflection-based visibility detection through reflective surfaces.</p>
     </div>
 
     <div>
@@ -185,6 +330,8 @@
     <div>✔ High performance optimized</div>
     <div>✔ Multiplayer ready</div>
     <div>✔ Easy integration</div>
+    <div>✔ Production-ready architecture</div>
+    <div>✔ Advanced anti-wallhack techniques</div>
   </div>
 </section>
 
@@ -192,8 +339,10 @@
   <h2>📘 Documentation</h2>
   <p>Learn how to integrate and configure the Anti-Wallhack system in your project.</p>
 
-  <a class="button" href="documentation.html">
-    View Documentation
+  <a class="button"
+    href="documentation.html"
+    data-analytics-event="click_documentation">
+    📘 Full Documentation & Benchmarks
   </a>
 </section>
 
