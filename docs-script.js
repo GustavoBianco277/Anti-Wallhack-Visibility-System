@@ -47,3 +47,35 @@ const sections = document.querySelectorAll('main.content section[id]');
       }
     });
     })();
+(function(){
+  const toggle = document.getElementById("toggleSidebar");
+  const sidebar = document.getElementById("sidebarNav");
+
+  if (!toggle || !sidebar) return;
+
+  toggle.setAttribute("aria-controls", "sidebarNav");
+  toggle.setAttribute("aria-expanded", "false");
+
+  function setOpen(open){
+    sidebar.classList.toggle("open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+
+  toggle.addEventListener("click", () => {
+    setOpen(!sidebar.classList.contains("open"));
+  });
+
+  sidebar.querySelectorAll(".nav-link").forEach(link => {
+    link.addEventListener("click", () => setOpen(false));
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setOpen(false);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!sidebar.classList.contains("open")) return;
+    if (sidebar.contains(e.target) || toggle.contains(e.target)) return;
+    setOpen(false);
+  });
+})();

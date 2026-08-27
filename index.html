@@ -18,20 +18,29 @@
 
   <meta property="og:title" content="Anti-Wallhack Visibility System">
   <meta property="og:description" content="Server-authoritative visibility validation for Unity multiplayer games.">
-  <meta property="og:image" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/icon.png">
+  <meta property="og:image" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/screenshots/fov-demo.png">
+  <meta property="og:image:width" content="1920">
+  <meta property="og:image:height" content="1080">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Anti-Wallhack Visibility System">
+  <meta name="twitter:description" content="Server-authoritative visibility validation for Unity multiplayer games.">
+  <meta name="twitter:image" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/screenshots/fov-demo.png">
+
+  <link rel="canonical" href="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/">
   <title>Anti-Wallhack Visibility System</title>
 
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" type="image/png" href="favicon.ico">
+  <link rel="icon" href="favicon.ico" sizes="any">
 </head>
 
 <body>
 
 <!-- HERO -->
 <header class="hero">
-  <img src="icon.png" alt="Logo">
+  <img src="icon.png" alt="Anti-Wallhack Visibility System logo" width="90" height="105">
   <h1>Anti-Wallhack Visibility System</h1>
 
   <p class="hero-subtitle">
@@ -48,14 +57,17 @@
  <div class="hero-buttons">
   <a class="button"
     href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-335182"
-    target="_blank"
+    target="_blank" rel="noopener"
     data-analytics-event="click_free_download">
     Download Free Version
   </a>
 
-  <a class="button secondary disabled"
+  <a class="button pro-cta"
+    href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-pro-394502"
+    target="_blank"
+    rel="noopener"
     data-analytics-event="click_pro_button">
-    Pro Version (Coming Soon)
+    Get Pro Version 🚀
   </a>
 
   <a class="button secondary"
@@ -101,8 +113,10 @@
   <h2>📊 Performance Benchmarks</h2>
 
   <p class="section-description">
-    Tested under a high-density server-like scenario using 32 visibility updates per second,
-    180° FOV-based observer detection, and Environment Detection disabled.
+    Worst-case stress test: a 50m × 50m high-density arena with 2 teams, 32 visibility updates
+    per second, 180° FOV-based observer detection and Environment Detection disabled.
+    <strong>System time</strong> is the cost of the visibility system itself; <strong>FPS impact</strong>
+    is the measured framerate drop against the same scene with the system removed.
   </p>
 
   <!-- BENCHMARK VIDEO -->
@@ -130,25 +144,25 @@
     <div class="benchmark-stat">
       <strong>10 Players</strong>
       <span>2.10 ms</span>
-      <small>1.44% impact</small>
+      <small>system time &middot; 1.44% FPS impact</small>
     </div>
 
     <div class="benchmark-stat">
       <strong>25 Players</strong>
       <span>5.72 ms</span>
-      <small>4.86% impact</small>
+      <small>system time &middot; 4.86% FPS impact</small>
     </div>
 
     <div class="benchmark-stat">
       <strong>50 Players</strong>
       <span>19.43 ms</span>
-      <small>13.44% impact</small>
+      <small>system time &middot; 13.44% FPS impact</small>
     </div>
 
     <div class="benchmark-stat">
       <strong>100 Players</strong>
       <span>61.46 ms</span>
-      <small>44.08% impact</small>
+      <small>system time &middot; 44.08% FPS impact</small>
     </div>
 
   </div>
@@ -180,15 +194,25 @@
     <!-- FREE -->
     <div class="card">
       <h3>Free Version</h3>
+      <p class="card-price">Free</p>
       <ul>
-        <li>✔ Visibility detection</li>
+        <li>✔ Observer FOV and distance validation</li>
+        <li>✔ 180° and 360° observer modes</li>
         <li>✔ Box-based player geometry</li>
-        <li>✔ Speed handling</li>
-        <li>✔ Simple configuration</li>
-        <li>✔ Ideal for testing</li>
+        <li>✔ Fixed and dynamic visibility sampling</li>
+        <li>✔ Velocity compensation</li>
+        <li>✔ Visibility filtering for teammates</li>
+        <li>✔ Basic wall clamping</li>
+        <li>✔ UnityEvent relay for no-code events</li>
+        <li>✔ Editor gizmos for debugging</li>
+        <li>✔ Benchmark scene included</li>
       </ul>
 
-      <a class="button" href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-335182" target="_blank">
+      <a class="button"
+        href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-335182"
+        target="_blank"
+        rel="noopener"
+        data-analytics-event="click_free_card">
         Download Free
       </a>
     </div>
@@ -196,25 +220,52 @@
     <!-- PRO -->
     <div class="card pro">
       <h3>Pro Version 🚀</h3>
+      <p class="card-price">$14.99</p>
+      <p class="card-note">Everything in Free, plus:</p>
       <ul>
-        <li>✔ Advanced server-side detection</li>
+        <li>✔ 270° observer mode</li>
         <li>✔ Box + Cylinder player geometry</li>
-        <li>✔ Animation compensation</li>
+        <li>✔ Animation-aware detection</li>
+        <li>✔ Observer prediction &amp; grace prediction</li>
+        <li>✔ Latency-aware compensation</li>
+        <li>✔ FOV &amp; rotation compensation</li>
         <li>✔ Shadow detection</li>
-        <li>🚧 Reflection detection (Planned)</li>
-        <li>✔ Advanced speed & latency handling</li>
-        <li>✔ Full customization</li>
-        <li>✔ High performance</li>
-        <li>✔ Production-ready</li>
-        <li style="color:#4db8ff;">🚧 Coming soon</li>
+        <li>✔ Reflection detection</li>
+        <li>✔ Runtime light registration</li>
+        <li>✔ Advanced wall clamping</li>
+        <li>✔ Extended benchmark scene &amp; analysis tools</li>
       </ul>
 
-      <a class="button secondary disabled">
-        Coming Soon
+      <a class="button pro-cta"
+        href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-pro-394502"
+        target="_blank"
+        rel="noopener"
+        data-analytics-event="click_pro_card">
+        Get Pro 🚀
       </a>
     </div>
 
   </div>
+
+  <div class="requirements">
+    <div>
+      <strong>Unity version</strong>
+      <span>6000.0 (Unity 6) or newer</span>
+    </div>
+    <div>
+      <strong>Dependencies</strong>
+      <span>None beyond Unity Physics</span>
+    </div>
+    <div>
+      <strong>License</strong>
+      <span>Extension Asset</span>
+    </div>
+    <div>
+      <strong>Package size</strong>
+      <span>Free 3.2 MB · Pro 3.4 MB</span>
+    </div>
+  </div>
+
 </section>
 
 <!-- FEATURES -->
@@ -278,22 +329,42 @@
   <div class="tech-grid">
     <div>
       <h3>Animation Compensation</h3>
-      <p>Maintains accurate detection even with complex player animations.</p>
+      <p>Adjusts the player collider from the animated pose, so detection stays accurate while the character moves.</p>
     </div>
 
     <div>
       <h3>Shadow Detection</h3>
-      <p>Detects player visibility through shadows.</p>
+      <p>Detects players through their projected shadows, using multiple light sources with runtime registration.</p>
     </div>
 
     <div>
-      <h3>Reflection Detection <span class="planned-badge">Planned</span></h3>
-      <p>Future support for reflection-based visibility detection through reflective surfaces.</p>
+      <h3>Reflection Detection</h3>
+      <p>Detects player visibility through reflective surfaces such as mirrors and glass.</p>
     </div>
 
     <div>
-      <h3>Latency Handling</h3>
-      <p>Improves reliability in real multiplayer network conditions.</p>
+      <h3>Latency Compensation</h3>
+      <p>Scales visibility margins with measured ping, keeping detection consistent under real network conditions.</p>
+    </div>
+
+    <div>
+      <h3>Observer Prediction</h3>
+      <p>Anticipates camera movement and adds grace prediction for smoother visibility transitions.</p>
+    </div>
+
+    <div>
+      <h3>270° Observer Mode</h3>
+      <p>Keeps the normal camera FOV and adds a temporary side expansion toward the rotation direction.</p>
+    </div>
+
+    <div>
+      <h3>Cylinder Geometry</h3>
+      <p>PlayerCylinder represents the player more faithfully than a box, improving precision around corners.</p>
+    </div>
+
+    <div>
+      <h3>Extended Benchmark Tools</h3>
+      <p>Both editions ship a benchmark scene. Pro extends it with a higher-density stress setup and performance analysis tools.</p>
     </div>
   </div>
 </section>
@@ -304,19 +375,19 @@
 
   <div class="carousel-container">
 
-    <button class="carousel-btn left" onclick="scrollCarousel(-1)">❮</button>
+    <button class="carousel-btn left" onclick="scrollCarousel(-1)" aria-label="Previous screenshot">❮</button>
 
     <div class="carousel" id="carousel">
-      <img src="screenshots/fov-demo.png" alt="FOV Demo">
-      <img src="screenshots/inspector-settings.png" alt="Inspector Settings">
-      <img src="screenshots/components.jpg" alt="Components">
-      <img src="screenshots/gizmos.png" alt="Gizmos">
-      <img src="screenshots/efficient-system.png" alt="System">
-      <img src="screenshots/detection-logic.png" alt="Detection">
+      <img src="screenshots/fov-demo.png" alt="FOV Demo" loading="lazy" decoding="async">
+      <img src="screenshots/inspector-settings.png" alt="Inspector Settings" loading="lazy" decoding="async">
+      <img src="screenshots/components.jpg" alt="Components" loading="lazy" decoding="async">
+      <img src="screenshots/gizmos.png" alt="Gizmos" loading="lazy" decoding="async">
+      <img src="screenshots/efficient-system.png" alt="System" loading="lazy" decoding="async">
+      <img src="screenshots/detection-logic.png" alt="Detection" loading="lazy" decoding="async">
       <!-- <img src="screenshots/new-image.png"> -->
     </div>
 
-    <button class="carousel-btn right" onclick="scrollCarousel(1)">❯</button>
+    <button class="carousel-btn right" onclick="scrollCarousel(1)" aria-label="Next screenshot">❯</button>
 
   </div>
 </section>
@@ -358,16 +429,17 @@
 
 <!-- FOOTER -->
 <footer>
-  <p>© 2025 Extreme World Studio</p>
+  <p>© 2025–2026 Extreme World Studio</p>
   <p>Made with 💙 for Unity developers</p>
 </footer>
 
 <!-- IMAGE MODAL -->
 <div class="image-modal" id="imageModal">
-  <span class="close-btn" id="closeModal">&times;</span>
-  <img src="" alt="Zoomed Image">
+  <button class="close-btn" id="closeModal" aria-label="Close image">&times;</button>
+  <img alt="Zoomed screenshot">
 </div>
 
   <script src="script.js"></script>
+  <script src="analytics-events.js"></script>
 </body>
 </html>

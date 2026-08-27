@@ -16,6 +16,17 @@
     
     <meta name="description" content="Anti-Wallhack Visibility System Documentation — Server-side visibility detection for Unity multiplayer games.">
     <title>Documentation — Anti-Wallhack Visibility System</title>
+
+    <link rel="canonical" href="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/documentation.html">
+    <link rel="icon" href="favicon.ico" sizes="any">
+
+    <meta property="og:title" content="Documentation — Anti-Wallhack Visibility System">
+    <meta property="og:description" content="Setup guide, component reference and performance benchmarks for the Anti-Wallhack Visibility System.">
+    <meta property="og:image" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/screenshots/fov-demo.png">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://gustavobianco277.github.io/Anti-Wallhack-Visibility-System/documentation.html">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="stylesheet" href="docs-style.css">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
@@ -129,7 +140,7 @@
           <li>UnityEvent integration for easy event handling in the Editor</li>
           <li>Broad-phase optimization for scalable visibility checks <span class="pro-badge">PRO</span></li>
           <li>Latency, movement, and animation compensation <span class="pro-badge">PRO</span></li>
-          <li>Shadow-based And Reflection environment detection <span class="pro-badge">PRO</span></li>
+          <li>Shadow-based and reflection environment detection <span class="pro-badge">PRO</span></li>
           <li>Performance benchmark data for server-like scenarios</li>
         </ul>
       </section>
@@ -236,6 +247,11 @@
         <p>
           To enable shadow-based Environment Detection, add a <code>ShadowLight</code> component to supported light sources and assign or refresh them through the <code>PlayerVisibilityDetector</code>.
         </p>
+        <h3>8. (Optional) Add ReflectionSurface <span class="pro-badge">PRO</span></h3>
+        <p>
+          To enable reflection-based Environment Detection, add a <code>ReflectionSurface</code> component to each mirror, window or reflective plane. Surfaces register themselves automatically while enabled, so there is no list to assign on the <code>PlayerVisibilityDetector</code>. Make sure the object's local <strong>+Z axis (blue arrow)</strong> points away from the reflective face, since it defines the reflection plane normal.
+        </p>
+
       </section>
 
       <!-- Components -->
@@ -586,13 +602,13 @@ dynamicLineSpeed </code></pre>
 
             <p>
               Environment Detection extends the regular line-of-sight validation by allowing the system to detect players through indirect visual information,
-              such as projected shadows. This makes visibility checks more realistic in scenarios where the player body is hidden, but environmental clues are still visible.
+              such as projected shadows and reflections. This makes visibility checks more realistic in scenarios where the player body is hidden, but environmental clues are still visible.
             </p>
 
             <ul class="features">
               <li><strong>Disabled:</strong> Uses only direct line-of-sight validation</li>
               <li><strong>Shadow:</strong> Enables indirect detection through projected shadows</li>
-              <li><strong>Reflection:</strong> Planned feature for reflective surface detection</li>
+              <li><strong>Reflection:</strong> Enables indirect detection through reflective surfaces</li>
             </ul>
 
             <div class="pro-box">
@@ -620,6 +636,21 @@ dynamicLineSpeed </code></pre>
             <div class="warning-box">
               ⚠️ Shadow Detection requires properly configured <code>ShadowLight</code> sources, obstacle masks, and scene geometry. Incorrect setup may cause false positives or missed shadow visibility.
             </div>
+            <h4>Reflection Detection Settings <span class="pro-badge">PRO</span></h4>
+
+            <p>
+              When Environment Detection includes <strong>Reflection</strong>, the detector uses every enabled <code>ReflectionSurface</code> in the scene to evaluate whether a player is visible through its reflection. Environment Detection is a flags field, so Shadow and Reflection can be enabled together.
+            </p>
+
+            <ul class="features">
+              <li><code>Show Reflection Lines</code> → Draws the observer → surface → player path in the Scene view</li>
+              <li><code>Obstacles Mask</code> → Also used for the two reflection linecasts (observer to surface, surface to player)</li>
+            </ul>
+
+            <div class="info-box">
+              💡 Reflection surfaces are discovered automatically. All remaining tuning lives on the <code>ReflectionSurface</code> component itself.
+            </div>
+
 
             <!-- COMPENSATION -->
             <h4>Size Compensation</h4>
@@ -668,7 +699,7 @@ dynamicLineSpeed </code></pre>
               <li>Animation-based collider adjustment</li>
               <li>Double wall optimization check</li>
               <li>Shadow-based environment detection</li>
-              <li>Reflection-based detection planned for future versions</li>
+              <li>Reflection-based environment detection</li>
             </ul>
 
             <!-- PERFORMANCE -->
@@ -903,6 +934,82 @@ dynamicLineSpeed </code></pre>
 
           </div>
         </div>
+        <!-- Reflection Surface-->
+        <div class="component-panel">
+          <div class="component-header">
+            <h3>ReflectionSurface <span class="pro-badge">PRO</span></h3>
+            <span class="component-tag">PRO</span>
+          </div>
+
+          <div class="component-body">
+
+            <p>
+              ReflectionSurface marks a mirror, window or any reflective plane that the Environment Detection system can use to validate whether a player is visible through its reflection.
+            </p>
+
+            <div class="pro-box">
+              🚀 Enables indirect player detection through reflective surfaces.
+            </div>
+
+            <div class="info-box">
+              💡 Reflection surfaces register themselves automatically while the component is enabled. Unlike ShadowLight, there is no list to assign on the PlayerVisibilityDetector.
+            </div>
+
+            <h4>Surface Orientation</h4>
+
+            <p>
+              The reflection plane is defined by the transform position and its local <strong>+Z axis (blue arrow)</strong>, which must point away from the reflective face. The yellow gizmo line shows the current normal direction.
+            </p>
+
+            <h4>Reflection Modes</h4>
+
+            <ul class="features">
+              <li><strong>Simple:</strong> Reflects a single main player point — fastest option</li>
+              <li><strong>Accurate:</strong> Reflects multiple collider bounds points for better precision near the surface edges</li>
+            </ul>
+
+            <h4>Surface Settings</h4>
+
+            <ul class="features">
+              <li><code>Size</code> → Width and height of the reflective area</li>
+              <li><code>Edge Tolerance</code> → Extra margin around the surface, preventing visibility from dropping abruptly near the edges</li>
+            </ul>
+
+            <h4>Detection Settings</h4>
+
+            <ul class="features">
+              <li><code>Max Distance</code> → Maximum distance at which observers can detect reflections</li>
+              <li><code>Reflection Surface FOV</code> → Minimum viewing angle required before reflection checks run</li>
+              <li><code>Reflection Mode</code> → Simple or Accurate sampling</li>
+              <li><code>Obstacle Mask</code> → Layers that block the line between the observer and the surface itself</li>
+            </ul>
+
+            <h4>How Detection Works</h4>
+
+            <ul class="features">
+              <li>The observer first runs a cheap surface check: distance, then viewing angle, then a linecast to the surface center using the surface Obstacle Mask</li>
+              <li>Only surfaces that pass are evaluated for that tick</li>
+              <li>The observer position is mirrored across the reflection plane, and the point where the mirrored line crosses the plane becomes the reflection point</li>
+              <li>The reflection point must land inside the surface area, including Edge Tolerance</li>
+              <li>Two final linecasts validate the path: observer → reflection point and reflection point → player, both using the detector Obstacles Mask</li>
+            </ul>
+
+            <div class="info-box">
+              💡 Enable <code>Show Reflection Lines</code> on the PlayerVisibilityDetector to visualize the path in the Scene view. Cyan is the observer to reflection point segment, green is reflection point to player, and red marks a rejected reflection.
+            </div>
+
+            <h4>Performance Recommendations</h4>
+
+            <ul class="features">
+              <li>Use Simple mode when edge precision is not critical</li>
+              <li>Keep Max Distance and Reflection Surface FOV as tight as the map allows, since both reject surfaces before any reflection math runs</li>
+              <li>Restrict Obstacle Mask to layers that can realistically block a reflection</li>
+              <li>Limit the number of active reflection surfaces in large maps</li>
+            </ul>
+
+          </div>
+        </div>
+
 
         <!-- VisibilityUnityEventRelay-->
         <div class="component-panel">
@@ -939,7 +1046,7 @@ dynamicLineSpeed </code></pre>
         </p>
 
         <div class="pipeline-image">
-          <img src="pipeline/visibility-pipeline.png" alt="Visibility Pipeline">
+          <img src="pipeline/visibility-pipeline.png" alt="Visibility Pipeline" width="1536" height="1024" loading="lazy" decoding="async">
         </div>
 
         <div class="info-box">
@@ -968,7 +1075,7 @@ dynamicLineSpeed </code></pre>
         <ul class="features">
           <li>Cylindrical collider support for more realistic player representation</li>
           <li>Environment Detection through projected shadows</li>
-          <li>Reflection-based visibility detection (coming soon)</li>
+          <li>Reflection-based visibility detection through reflective surfaces</li>
           <li>Animation-aware collider expansion</li>
           <li>Latency and velocity compensation</li>
           <li>Dynamic FOV compensation</li>
@@ -1225,9 +1332,8 @@ dynamicLineSpeed </code></pre>
           Supports Photon Fusion, Mirror, Netcode, PUN and FishNet out of the box.
         </p>
 
-        <!--<a href="#" target="_blank" class="pro-button">Get PRO Version 🚀</a>-->
-        <a class="pro-button disabled" data-analytics-event="click_pro_button">
-          PRO Coming Soon 🚀
+        <a class="pro-button" href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-pro-394502" target="_blank" rel="noopener" data-analytics-event="click_pro_button">
+          Get PRO Version 🚀
         </a>
         
       </div>
@@ -2055,15 +2161,14 @@ dynamicLineSpeed </code></pre>
           🔓 Unlock advanced features like latency compensation, cylinder detection and enhanced debugging tools.
         </p>
 
-        <!--<a href="#" target="_blank" class="pro-button">Get PRO Version 🚀</a>-->
-        <a class="pro-button disabled" data-analytics-event="click_pro_button">
-          PRO Coming Soon 🚀
+        <a class="pro-button" href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-pro-394502" target="_blank" rel="noopener" data-analytics-event="click_pro_button">
+          Get PRO Version 🚀
         </a>
 
       </div>
 
       <div class="footer-meta">
-        <p>© 2025 Extreme World Studio — Anti-Wallhack Visibility System</p>
+        <p>© 2025–2026 Extreme World Studio — Anti-Wallhack Visibility System</p>
         <p>Made with Unity • AI-assisted content disclosed.</p>
       </div>
     </footer>
