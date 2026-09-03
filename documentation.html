@@ -683,6 +683,7 @@ dynamicLineSpeed </code></pre>
               <li>Detects animation pose overflow outside the player collider</li>
               <li>Supports head, hands, and feet compensation</li>
               <li>Improves visibility accuracy during running, crouching, jumping, leaning, and attack animations</li>
+              <li>Requires a Humanoid Animator, and Always Animate culling on a dedicated server</li>
               <li>Works together with velocity and latency compensation systems</li>
             </ul>
 
@@ -1332,11 +1333,15 @@ dynamicLineSpeed </code></pre>
 
         <div class="pro-cta">
         <p>
-          🔓 <strong>PRO Version:</strong> Full automatic integration with supported networking frameworks.
-          No manual code required — simply attach the adapter and driver components.
+          🔓 <strong>PRO Version:</strong> Ready-made adapters and drivers for every supported framework.
+          Attach the two components and visibility validation runs on the server, with the camera
+          direction and latency already synchronized for you.
         </p>
         <p>
-          Supports Photon Fusion, Mirror, Netcode, PUN and FishNet out of the box.
+          Supports Photon Fusion, Mirror, Netcode for GameObjects, PUN and Fish-Networking.
+          Netcode and PUN also hide players per client out of the box, while Fusion, Mirror and
+          Fish-Networking expose a documented hook so visibility plugs into the interest management
+          each framework already provides.
         </p>
 
         <a class="pro-button" href="https://assetstore.unity.com/packages/tools/network/anti-wallhack-visibility-system-pro-394502" target="_blank" rel="noopener" data-analytics-event="click_pro_button">
